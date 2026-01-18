@@ -14,9 +14,9 @@ Ledgerly turns photos of bills, voice notes, and everyday transactions into GST�
 
 ## 🛠️ Tech stack
 
-- **Frontend**: Vanilla HTML/CSS/JS (ES6+), GSAP for animations
+- **Frontend**: HTML/CSS/JS
 - **Backend**: Flask (Python)
-- **Styling**: CSS custom properties, Manrope font, pastel floating aesthetic
+- **Styling**: CSS custom properties, Manrope font
 - **Icons/Assets**: SVG logo and placeholder images
 
 ## 📁 Project structure
@@ -105,4 +105,5 @@ ledgerly-main/
 
 
 Built with ❤️ for India’s neighborhood shop owners.
+
 
