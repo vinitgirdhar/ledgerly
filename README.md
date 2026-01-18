@@ -103,10 +103,6 @@ ledgerly-main/
 4. Test on mobile and desktop.
 5. Submit a pull request with a clear description.
 
-## 📄 License
-
-MIT License – see LICENSE file for details.
-
----
 
 Built with ❤️ for India’s neighborhood shop owners.
+
