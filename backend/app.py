@@ -11,6 +11,10 @@ from db import connect, default_db_path, init_db, query_one, query_all, exec_one
 
 
 FRONTEND_DIR = Path(__file__).resolve().parents[1]
+PAGES_DIR = FRONTEND_DIR / "pages"
+STYLES_DIR = FRONTEND_DIR / "styles"
+SCRIPTS_DIR = FRONTEND_DIR / "script"
+UPLOADS_DIR = FRONTEND_DIR / "uploads"
 
 
 def create_app() -> Flask:
@@ -22,6 +26,19 @@ def create_app() -> Flask:
 
     db_path = Path(os.environ.get("LEDGERLY_DB_PATH", str(default_db_path())))
     init_db(db_path)
+
+    def ensure_demo_user() -> None:
+        with connect(db_path) as conn:
+            existing = query_one(conn, "SELECT id FROM users WHERE email = ?", ("demo@ledgerly.in",))
+            if existing is None:
+                pwd_hash = generate_password_hash("Ledgerly@123")
+                exec_one(
+                    conn,
+                    "INSERT INTO users (username, email, password_hash) VALUES (?,?,?)",
+                    ("Demo Owner", "demo@ledgerly.in", pwd_hash),
+                )
+
+    ensure_demo_user()
 
     def get_conn():
         return connect(db_path)
@@ -41,13 +58,37 @@ def create_app() -> Flask:
     # -------------------------
     @app.get("/")
     def serve_index():
-        return send_from_directory(FRONTEND_DIR, "index.html")
+        return send_from_directory(PAGES_DIR, "index.html")
+
+    @app.get("/dashboard")
+    def serve_dashboard():
+        return send_from_directory(PAGES_DIR, "dashboard.html")
+
+    @app.get("/insights")
+    def serve_insights():
+        return send_from_directory(PAGES_DIR, "insights.html")
 
     @app.get("/<path:path>")
     def serve_static(path: str):
         # Prevent API paths from being treated as files.
         if path.startswith("api/"):
             return jsonify({"error": "not_found"}), 404
+
+        if path.startswith("styles/"):
+            inner = path.split("/", 1)[1]
+            return send_from_directory(STYLES_DIR, inner)
+
+        if path.startswith("script/"):
+            inner = path.split("/", 1)[1]
+            return send_from_directory(SCRIPTS_DIR, inner)
+
+        if path.startswith("uploads/"):
+            inner = path.split("/", 1)[1]
+            return send_from_directory(UPLOADS_DIR, inner)
+
+        page_candidate = PAGES_DIR / path
+        if page_candidate.is_file():
+            return send_from_directory(PAGES_DIR, path)
 
         full_path = FRONTEND_DIR / path
         if full_path.is_file():
