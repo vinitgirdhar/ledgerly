@@ -1010,9 +1010,11 @@ section h2 {
     background: rgba(255, 255, 255, 0.15);
     pointer-events: none;
     transform: translate(-50%, -50%);
-    transition: transform 0.15s ease, width 0.2s ease, height 0.2s ease, border 0.2s ease;
+    /* Optimized transition: remove transform transition! */
+    transition: width 0.2s ease, height 0.2s ease, border 0.2s ease;
     z-index: 9999;
     mix-blend-mode: multiply;
+    will-change: transform, width, height;
 }
 
 .mouse-ring.is-active {

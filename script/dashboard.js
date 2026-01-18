@@ -1,10 +1,47 @@
 (function () {
   document.addEventListener('DOMContentLoaded', () => {
+    initGreetingAndUser();
     initOnboardingWizard();
     if (window.ToastManager) {
       ToastManager.attachTriggers(document);
     }
   });
+
+  function initGreetingAndUser() {
+    // Fetch current user
+    fetch('/api/me', { credentials: 'same-origin' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok && data.user) {
+          const headline = document.querySelector('.headline');
+          if (headline) {
+            headline.textContent = `Namaste, ${data.user.username}!`;
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback: keep default text
+      });
+
+    // Update greeting based on time
+    function updateGreeting() {
+      const hour = new Date().getHours();
+      const eyebrow = document.querySelector('.eyebrow');
+      if (!eyebrow) return;
+
+      if (hour < 12) {
+        eyebrow.textContent = 'Good morning';
+      } else if (hour < 18) {
+        eyebrow.textContent = 'Good afternoon';
+      } else {
+        eyebrow.textContent = 'Good evening';
+      }
+    }
+
+    updateGreeting();
+    // Update greeting every minute
+    setInterval(updateGreeting, 60000);
+  }
 
   function initOnboardingWizard() {
     const modal = document.getElementById('onboardingModal');

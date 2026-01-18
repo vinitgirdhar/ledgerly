@@ -40,6 +40,13 @@ def create_app() -> Flask:
 
     ensure_demo_user()
 
+    @app.after_request
+    def add_header(response):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
     def get_conn():
         return connect(db_path)
 

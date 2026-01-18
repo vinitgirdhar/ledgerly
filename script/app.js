@@ -103,15 +103,40 @@ function initMouseRing() {
     ring.className = 'mouse-ring';
     document.body.appendChild(ring);
 
-    const setX = gsap.quickSetter(ring, 'x', 'px');
-    const setY = gsap.quickSetter(ring, 'y', 'px');
+    // Using gsap.to with very short duration for smoother lag effect, or quickSetter for instant
+    // To fix "slowness", we want to reduce the lag or make it tighter.
+    // Let's use gsap.ticker to update position for better performance loop,
+    // or just use direct style transform if we want 1:1 speed.
+    
+    // APPROACH: Use a simple direct transform for immediate feel, 
+    // or a very fast spring. Current implementation uses quickSetter which is good, 
+    // but maybe the CSS transition on the class is interfering?
+    // Let's check styles.css later. For now, let's optimize the JS update loop.
 
-    const moveRing = ({ clientX, clientY }) => {
-        setX(clientX);
-        setY(clientY);
-    };
+    let mouseX = 0;
+    let mouseY = 0;
+    let ringX = 0;
+    let ringY = 0;
 
-    window.addEventListener('pointermove', moveRing);
+    // Listen for mouse updates
+    window.addEventListener('pointermove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    // Use GSAP ticker for smooth 60fps updates rather than pure event listener
+    gsap.ticker.add(() => {
+        // Linear interpolation for a "smooth follow" feeling that isn't too lazy
+        // Increase 0.15 to something higher (e.g. 0.3) for snappier response, 
+        // or 1.0 for instant lock.
+        const dt = 1.0 - Math.pow(1.0 - 0.35, gsap.ticker.deltaRatio()); 
+        
+        ringX += (mouseX - ringX) * dt;
+        ringY += (mouseY - ringY) * dt;
+        
+        gsap.set(ring, { x: ringX, y: ringY });
+    });
+    
     window.addEventListener('pointerdown', () => ring.classList.add('is-active'));
     window.addEventListener('pointerup', () => ring.classList.remove('is-active'));
 

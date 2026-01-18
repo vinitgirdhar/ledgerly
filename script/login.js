@@ -82,7 +82,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!resp.ok) {
-        const msg = (resp.data && (resp.data.message || resp.data.error)) ? (resp.data.message || resp.data.error) : 'Registration failed.';
+        let msg = 'Registration failed.';
+        if (resp.data) {
+          if (resp.data.error === 'user_exists') {
+            msg = '❌ Email already registered. Please use a different email or log in.';
+          } else if (resp.data.message) {
+            msg = resp.data.message;
+          } else if (resp.data.error) {
+            msg = resp.data.error;
+          }
+        }
         if (status) { status.className = 'form-status error'; status.textContent = msg; }
         return;
       }
