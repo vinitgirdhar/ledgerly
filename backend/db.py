@@ -46,13 +46,63 @@ def init_db(db_path: Path) -> None:
                 entry_type TEXT NOT NULL CHECK(entry_type IN ('income','expense')),
                 amount REAL NOT NULL,
                 note TEXT,
+                vendor_name TEXT,
+                vendor_gstin TEXT,
+                bill_number TEXT,
+                bill_date TEXT,
+                taxable_amount REAL,
+                cgst_amount REAL,
+                sgst_amount REAL,
+                igst_amount REAL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             );
 
             CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id);
+
+            CREATE TABLE IF NOT EXISTS bills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                s3_key TEXT NOT NULL,
+                s3_url TEXT,
+                ocr_text TEXT,
+                detected_amount REAL,
+                vendor_name TEXT,
+                bill_date TEXT,
+                total_amount REAL,
+                gst_amount REAL,
+                items_json TEXT,
+                status TEXT NOT NULL DEFAULT 'processing',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_bills_user_id ON bills(user_id);
             """
         )
+
+        def add_column_if_missing(table: str, column: str, col_type: str) -> None:
+            existing = conn.execute(f"PRAGMA table_info({table})").fetchall()
+            cols = {row[1] for row in existing}
+            if column not in cols:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+
+        add_column_if_missing("bills", "vendor_name", "TEXT")
+        add_column_if_missing("bills", "bill_date", "TEXT")
+        add_column_if_missing("bills", "total_amount", "REAL")
+        add_column_if_missing("bills", "gst_amount", "REAL")
+        add_column_if_missing("bills", "items_json", "TEXT")
+
+        # Entries table migrations (for GST ledger)
+        add_column_if_missing("entries", "vendor_name", "TEXT")
+        add_column_if_missing("entries", "vendor_gstin", "TEXT")
+        add_column_if_missing("entries", "bill_number", "TEXT")
+        add_column_if_missing("entries", "bill_date", "TEXT")
+        add_column_if_missing("entries", "taxable_amount", "REAL")
+        add_column_if_missing("entries", "cgst_amount", "REAL")
+        add_column_if_missing("entries", "sgst_amount", "REAL")
+        add_column_if_missing("entries", "igst_amount", "REAL")
 
 
 def query_one(conn: sqlite3.Connection, sql: str, params: Iterable[Any] = ()) -> sqlite3.Row | None:

@@ -1584,3 +1584,208 @@ tbody tr[data-muted="true"] {
     min-width: 0;
   }
 }
+
+/* ================================
+   Bill Upload Workspace Styles
+   ================================ */
+
+.upload-drop-zone {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 1rem;
+  background: rgba(19, 15, 28, 0.04);
+  border: 2px dashed rgba(31, 26, 54, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  gap: 0.75rem;
+}
+
+.upload-drop-zone:hover {
+  border-color: var(--accent-yellow);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.upload-drop-zone.drag-over {
+  border-color: var(--accent-green);
+  background: rgba(182, 240, 156, 0.12);
+  transform: scale(1.02);
+}
+
+.upload-icon {
+  font-size: 3rem;
+  opacity: 0.8;
+}
+
+.upload-label {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.upload-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.upload-processing {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 1rem;
+  background: rgba(19, 15, 28, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.processing-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(31, 26, 54, 0.15);
+  border-top-color: var(--accent-yellow);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.upload-processing p {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.upload-result {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 1rem;
+  background: rgba(182, 240, 156, 0.15);
+  border: 2px solid rgba(182, 240, 156, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.result-success {
+  font-size: 3rem;
+}
+
+.result-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.result-amount {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #2d7a4a;
+  background: rgba(182, 240, 156, 0.3);
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.75rem;
+}
+
+.result-link {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: rgba(31, 26, 54, 0.08);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.result-link:hover {
+  transform: translateY(-1px);
+  background: rgba(31, 26, 54, 0.16);
+}
+
+/* Confidence Badge Styles */
+.result-confidence {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.confidence-badge {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.confidence-high {
+  background: rgba(182, 240, 156, 0.4);
+  color: #1d6a35;
+}
+
+.confidence-medium {
+  background: rgba(255, 209, 102, 0.4);
+  color: #8a6d00;
+}
+
+.confidence-low {
+  background: rgba(255, 150, 150, 0.4);
+  color: #a33030;
+}
+
+.upload-another-btn {
+  margin-top: 0.75rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.85rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.upload-another-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(31, 26, 54, 0.25);
+}
+
+/* OCR Preview Box */
+.ocr-preview {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(31, 26, 54, 0.04);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.ocr-preview h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.ocr-text-box {
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #fff;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}

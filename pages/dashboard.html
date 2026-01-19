@@ -672,15 +672,27 @@
           <div class="modal-body">
             <div class="modal-pane">
               <div class="device-mock">
-                <div class="camera-preview">
-                  <div class="document-frame">
-                    <div class="doc-line"></div>
-                    <div class="doc-line"></div>
-                    <div class="doc-line"></div>
-                  </div>
-                  <span class="capture-label">Ready to capture</span>
+                <!-- Upload Drop Zone -->
+                <div class="upload-drop-zone" id="uploadDropZone">
+                  <input type="file" id="billFileInput" accept="image/*" style="display: none;">
+                  <div class="upload-icon">📷</div>
+                  <p class="upload-label">Click to upload or drag image here</p>
+                  <p class="upload-hint">Supports JPG, PNG, WebP (max 10MB)</p>
                 </div>
-                <button type="button" class="capture-btn">● Capture bill</button>
+                <!-- Processing State -->
+                <div class="upload-processing" id="uploadProcessing" style="display: none;">
+                  <div class="processing-spinner"></div>
+                  <p>Uploading & analyzing bill...</p>
+                </div>
+                <!-- Result State -->
+                <div class="upload-result" id="uploadResult" style="display: none;">
+                  <div class="result-success">✅</div>
+                  <p class="result-title">Bill processed!</p>
+                  <div class="result-amount" id="resultAmount"></div>
+                  <div class="result-confidence" id="resultConfidence" style="display: none;"></div>
+                  <a class="result-link" id="resultViewLink" href="#" target="_blank" rel="noopener">View uploaded bill</a>
+                  <button type="button" class="upload-another-btn" id="uploadAnotherBtn">Upload another</button>
+                </div>
               </div>
             </div>
             <div class="modal-pane">
@@ -707,9 +719,13 @@
                   </div>
                 </div>
               </div>
+              <!-- OCR Text Preview -->
+              <div class="ocr-preview" id="ocrPreview" style="display: none;">
+                <h4>Extracted Text</h4>
+                <div class="ocr-text-box" id="ocrTextBox"></div>
+              </div>
               <div class="modal-actions">
-                <button type="button" class="modal-primary" data-toast="Sample invoice generated for Shree Traders." data-intent="success">Run sample invoice</button>
-                <button type="button" class="modal-secondary" data-modal-close>Cancel</button>
+                <button type="button" class="modal-secondary" data-modal-close>Close</button>
               </div>
             </div>
           </div>
@@ -1059,5 +1075,6 @@
     });
   </script>
   <script src="/script/dashboard.js"></script>
+  <script src="/script/bill-upload.js"></script>
 </body>
 </html>

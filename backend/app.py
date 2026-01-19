@@ -1,20 +1,253 @@
 from __future__ import annotations
 
+import json
 import os
+import re
+import uuid
 from datetime import timedelta
 from pathlib import Path
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / ".env")
+
 from flask import Flask, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
+import pytesseract
+from PIL import Image
+import google.generativeai as genai
+import cv2
+import numpy as np
 
 from db import connect, default_db_path, init_db, query_one, query_all, exec_one
 
+# Configure Tesseract path (Windows default install location)
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# Gemini Vision API key (optional)
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+# Allowed file extensions for bill uploads
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff"}
+
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def _clean_json_text(raw_text: str) -> str:
+    """Extract JSON from LLM response (handles ```json blocks)."""
+    text = raw_text.strip()
+    if "```" in text:
+        # Find content between ``` markers
+        parts = text.split("```")
+        for part in parts:
+            part = part.strip()
+            if part.startswith("json"):
+                part = part[4:].strip()
+            if part.startswith("{"):
+                return part
+    return text
+
+# ================================
+# 🔥 STEP 1: IMAGE PREPROCESSING
+# ================================
+def preprocess_bill_image(image_path: Path) -> Path:
+    """
+    Preprocess bill image for better OCR and LLM accuracy.
+    - Converts to grayscale
+    - Applies adaptive thresholding to remove shadows
+    - Enhances handwriting visibility
+    """
+    try:
+        img = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            return image_path  # Return original if can't read
+        
+        # Adaptive threshold - removes shadows, enhances text
+        processed = cv2.adaptiveThreshold(
+            img, 255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            11, 2
+        )
+        
+        # Save processed image alongside original
+        processed_path = image_path.parent / f"processed_{image_path.name}"
+        cv2.imwrite(str(processed_path), processed)
+        return processed_path
+    except Exception:
+        return image_path  # Return original on any error
+
+# ================================
+# 🎯 STEP 3: EXTRACTION_PROMPT
+# ================================
+EXTRACTION_PROMPT = """
+Analyze this Indian GST bill and extract the following information in JSON format:
+{
+  "vendor_name": "",
+  "vendor_gstin": "",
+  "bill_number": "",
+  "bill_date": "",
+  "items": [
+    {
+      "description": "",
+      "hsn_code": "",
+      "quantity": 0,
+      "rate": 0,
+      "amount": 0
+    }
+  ],
+  "subtotal": 0,
+  "cgst_rate": 0,
+  "cgst_amount": 0,
+  "sgst_rate": 0,
+  "sgst_amount": 0,
+  "igst_rate": 0,
+  "igst_amount": 0,
+  "total_amount": 0
+}
+
+Return ONLY valid JSON, no markdown formatting.
+
+OCR hints (may be inaccurate):
+<<<{ocr_text}>>>
+"""
+
+# ================================
+# 🔁 STEP 4: VERIFICATION_PROMPT
+# ================================
+VERIFICATION_PROMPT = """You are a strict financial auditor AI.
+
+Given:
+1) The original bill image
+2) Extracted JSON below
+
+Extracted data:
+<<<{extracted_json}>>>
+
+Your job:
+- Verify numerical consistency
+- Check if total_amount = subtotal + cgst_amount + sgst_amount + igst_amount
+- Ensure totals look visually plausible against the bill image
+- Fix obvious mistakes
+- If unsure, set fields to null or 0.
+
+Return ONLY the corrected JSON (same schema, no explanations)."""
+
+# ================================
+# 🧪 STEP 5: RULE-BASED VALIDATION
+# ================================
+def validate_bill_data(bill: dict) -> dict:
+    """Apply rule-based validation to prevent embarrassing errors."""
+    if bill is None:
+        return None
+    
+    total = bill.get("total_amount")
+    gst = bill.get("gst_amount")
+    subtotal = bill.get("subtotal")
+    confidence = bill.get("confidence", 0.5)
+    
+    # Rule 1: Total should be at least ₹10
+    if total is not None and total < 10:
+        confidence -= 0.2
+    
+    # Rule 2: GST cannot exceed total
+    if gst is not None and total is not None and gst > total:
+        bill["gst_amount"] = None
+        confidence -= 0.15
+    
+    # Rule 3: GST percentage sanity check (0-28% in India)
+    gst_pct = bill.get("gst_percentage")
+    if gst_pct is not None and (gst_pct < 0 or gst_pct > 28):
+        bill["gst_percentage"] = None
+        confidence -= 0.1
+    
+    # Rule 4: Subtotal + GST should approximately equal total
+    if subtotal is not None and gst is not None and total is not None:
+        expected = subtotal + gst
+        if abs(expected - total) > total * 0.1:  # >10% mismatch
+            confidence -= 0.15
+    
+    # Rule 5: If no items extracted, lower confidence
+    items = bill.get("items", [])
+    if not items:
+        confidence -= 0.1
+    
+    # Clamp confidence to valid range
+    bill["confidence"] = max(0.0, min(1.0, confidence))
+    
+    return bill
+
+# ================================
+# 🧠 MAIN EXTRACTION PIPELINE
+# ================================
+def run_gemini_structured(image_path: Path, ocr_text: str) -> dict | None:
+    """
+    Complete bill extraction pipeline:
+    1. Preprocess image
+    2. Extract with Gemini Vision
+    3. Verify with second LLM pass
+    4. Apply rule-based validation
+    """
+    if not GEMINI_API_KEY:
+        return None
+
+    try:
+        # Preprocess image for better accuracy
+        processed_path = preprocess_bill_image(image_path)
+        
+        # Load image for Gemini
+        pil_image = Image.open(processed_path)
+        
+        # STEP 3: First extraction pass
+        extraction_prompt = EXTRACTION_PROMPT.format(ocr_text=ocr_text)
+        model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        
+        response = model.generate_content([extraction_prompt, pil_image])
+        raw = response.text or ""
+        extracted = json.loads(_clean_json_text(raw))
+        
+        if not isinstance(extracted, dict):
+            return None
+        
+        # STEP 4: Verification pass (second LLM call)
+        try:
+            verify_prompt = VERIFICATION_PROMPT.format(
+                extracted_json=json.dumps(extracted, indent=2)
+            )
+            verify_response = model.generate_content([verify_prompt, pil_image])
+            verify_raw = verify_response.text or ""
+            verified = json.loads(_clean_json_text(verify_raw))
+            
+            if isinstance(verified, dict):
+                extracted = verified  # Use verified version
+        except Exception:
+            pass  # Keep original extraction if verification fails
+        
+        # STEP 5: Rule-based validation
+        validated = validate_bill_data(extracted)
+        
+        # Cleanup processed image
+        if processed_path != image_path and processed_path.exists():
+            try:
+                processed_path.unlink()
+            except Exception:
+                pass
+        
+        return validated
+        
+    except Exception as e:
+        print(f"Gemini extraction error: {e}")
+        return None
 
 FRONTEND_DIR = Path(__file__).resolve().parents[1]
 PAGES_DIR = FRONTEND_DIR / "pages"
 STYLES_DIR = FRONTEND_DIR / "styles"
 SCRIPTS_DIR = FRONTEND_DIR / "script"
 UPLOADS_DIR = FRONTEND_DIR / "uploads"
+BILLS_UPLOAD_DIR = UPLOADS_DIR / "bills"
 
 
 def create_app() -> Flask:
@@ -26,6 +259,7 @@ def create_app() -> Flask:
 
     db_path = Path(os.environ.get("LEDGERLY_DB_PATH", str(default_db_path())))
     init_db(db_path)
+    BILLS_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     def ensure_demo_user() -> None:
         with connect(db_path) as conn:
@@ -240,6 +474,173 @@ def create_app() -> Flask:
             )
 
         return jsonify({"ok": True, "entry": {"id": entry_id, "entry_type": entry_type, "amount": amount_val, "note": note}})
+
+    # -------------------------
+    # Bills / OCR API
+    # -------------------------
+    @app.post("/api/bills/upload")
+    def api_upload_bill():
+        """Upload a bill image locally and extract text via OCR."""
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        if "file" not in request.files:
+            return jsonify({"error": "no_file"}), 400
+
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"error": "empty_filename"}), 400
+
+        if not allowed_file(file.filename):
+            return jsonify({"error": "invalid_file_type", "message": "Only image files (PNG, JPG, etc.) are allowed."}), 400
+
+        try:
+            # Secure the filename and create unique storage key
+            original_filename = secure_filename(file.filename)
+            unique_id = uuid.uuid4().hex
+            stored_filename = f"{unique_id}_{original_filename}"
+            local_path = BILLS_UPLOAD_DIR / stored_filename
+            public_url = f"/uploads/bills/{stored_filename}"
+
+            # Save locally
+            file.save(local_path)
+
+            # Insert bill record with status 'processing'
+            with get_conn() as conn:
+                bill_id = exec_one(
+                    conn,
+                    """INSERT INTO bills (user_id, filename, s3_key, s3_url, status)
+                       VALUES (?, ?, ?, ?, 'processing')""",
+                    (user_id, original_filename, str(local_path), public_url),
+                )
+
+            # Run Tesseract OCR on local file
+            image = Image.open(local_path)
+            ocr_text = pytesseract.image_to_string(image)
+
+            # Use Gemini Vision to structure data (optional)
+            structured = run_gemini_structured(local_path, ocr_text) or {}
+            
+            vendor_name = structured.get("vendor_name")
+            vendor_gstin = structured.get("vendor_gstin")
+            bill_number = structured.get("bill_number")
+            bill_date = structured.get("bill_date")
+            total_amount = structured.get("total_amount")
+            subtotal = structured.get("subtotal")  # Taxable value
+            cgst_amount = structured.get("cgst_amount")
+            sgst_amount = structured.get("sgst_amount")
+            igst_amount = structured.get("igst_amount")
+            gst_amount = (cgst_amount or 0) + (sgst_amount or 0) + (igst_amount or 0)
+            items = structured.get("items")
+            confidence = structured.get("confidence")
+            items_json = json.dumps(items) if items is not None else None
+
+            # Extract amount from OCR text (basic regex for Indian currency patterns)
+            detected_amount = None
+            # Match patterns like ₹1,234.56 or Rs. 1234 or 1,234.00 or just numbers
+            amount_patterns = [
+                r"(?:₹|Rs\.?|INR)\s*([\d,]+\.?\d*)",  # ₹1,234 or Rs. 1234
+                r"Total[:\s]*([\d,]+\.?\d*)",          # Total: 1234
+                r"Amount[:\s]*([\d,]+\.?\d*)",         # Amount: 1234
+                r"Grand\s*Total[:\s]*([\d,]+\.?\d*)",  # Grand Total: 1234
+                r"\b([\d,]+\.\d{2})\b",                # Generic decimal like 1234.00
+            ]
+            for pattern in amount_patterns:
+                match = re.search(pattern, ocr_text, re.IGNORECASE)
+                if match:
+                    amount_str = match.group(1).replace(",", "")
+                    try:
+                        detected_amount = float(amount_str)
+                        break
+                    except ValueError:
+                        continue
+
+            # Update bill record with OCR results
+            with get_conn() as conn:
+                conn.execute(
+                    """UPDATE bills SET ocr_text = ?, detected_amount = ?, vendor_name = ?, bill_date = ?,
+                           total_amount = ?, gst_amount = ?, items_json = ?, status = 'done'
+                       WHERE id = ?""",
+                    (ocr_text, detected_amount, vendor_name, bill_date, total_amount, gst_amount, items_json, bill_id),
+                )
+
+            # Auto-create ledger entry if we have a valid total amount
+            if total_amount and total_amount > 0:
+                with get_conn() as conn:
+                    note = f"Bill from {vendor_name or 'Unknown Vendor'}"
+                    exec_one(
+                        conn,
+                        """INSERT INTO entries (
+                            user_id, entry_type, amount, note, 
+                            vendor_name, vendor_gstin, bill_number, bill_date,
+                            taxable_amount, cgst_amount, sgst_amount, igst_amount
+                        ) VALUES (?, 'expense', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        (
+                            user_id, total_amount, note,
+                            vendor_name, vendor_gstin, bill_number, bill_date,
+                            subtotal, cgst_amount, sgst_amount, igst_amount
+                        )
+                    )
+
+            return jsonify({
+                "ok": True,
+                "bill": {
+                    "id": bill_id,
+                    "filename": original_filename,
+                    "s3_url": public_url,
+                    "ocr_text": ocr_text,
+                    "detected_amount": detected_amount,
+                    "vendor_name": vendor_name,
+                    "bill_date": bill_date,
+                    "total_amount": total_amount,
+                    "gst_amount": gst_amount,
+                    "items": items,
+                    "confidence": confidence,
+                    "status": "done",
+                }
+            })
+        except Exception as e:
+            return jsonify({"error": "upload_failed", "message": str(e)}), 500
+
+    @app.get("/api/bills")
+    def api_list_bills():
+        """List all bills for the current user."""
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        with get_conn() as conn:
+            rows = query_all(
+                conn,
+                """SELECT id, filename, s3_url, ocr_text, detected_amount, vendor_name, bill_date,
+                          total_amount, gst_amount, items_json, status, created_at
+                   FROM bills WHERE user_id = ? ORDER BY id DESC""",
+                (user_id,),
+            )
+
+        return jsonify({"ok": True, "bills": [dict(r) for r in rows]})
+
+    @app.get("/api/bills/<int:bill_id>")
+    def api_get_bill(bill_id: int):
+        """Get a specific bill by ID."""
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        with get_conn() as conn:
+            row = query_one(
+                conn,
+                """SELECT id, filename, s3_url, ocr_text, detected_amount, vendor_name, bill_date,
+                          total_amount, gst_amount, items_json, status, created_at
+                   FROM bills WHERE id = ? AND user_id = ?""",
+                (bill_id, user_id),
+            )
+
+        if row is None:
+            return jsonify({"error": "not_found"}), 404
+
+        return jsonify({"ok": True, "bill": dict(row)})
 
     return app
 

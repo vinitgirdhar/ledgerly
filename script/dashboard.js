@@ -149,4 +149,159 @@
 
     updateProgressDisplay();
   }
+
+  // ================================
+  // Bill Upload Functionality
+  // ================================
+  function initBillUpload() {
+    const dropZone = document.getElementById('uploadDropZone');
+    const fileInput = document.getElementById('billFileInput');
+    const processingEl = document.getElementById('uploadProcessing');
+    const resultEl = document.getElementById('uploadResult');
+    const resultAmount = document.getElementById('resultAmount');
+    const resultViewLink = document.getElementById('resultViewLink');
+    const ocrPreview = document.getElementById('ocrPreview');
+    const ocrTextBox = document.getElementById('ocrTextBox');
+    const uploadAnotherBtn = document.getElementById('uploadAnotherBtn');
+
+    if (!dropZone || !fileInput) return;
+
+    // Click to open file picker
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileUpload(files[0]);
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        handleFileUpload(fileInput.files[0]);
+      }
+    });
+
+    // Upload another button
+    if (uploadAnotherBtn) {
+      uploadAnotherBtn.addEventListener('click', resetUploadUI);
+    }
+
+    function resetUploadUI() {
+      dropZone.style.display = 'flex';
+      processingEl.style.display = 'none';
+      resultEl.style.display = 'none';
+      ocrPreview.style.display = 'none';
+      fileInput.value = '';
+    }
+
+    async function handleFileUpload(file) {
+      // Validate file type
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Please upload an image file (PNG, JPG, WebP, etc.)');
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+
+      // Show processing state
+      dropZone.style.display = 'none';
+      processingEl.style.display = 'flex';
+      resultEl.style.display = 'none';
+      ocrPreview.style.display = 'none';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/bills/upload', {
+          method: 'POST',
+          credentials: 'same-origin',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || data.error || 'Upload failed');
+        }
+
+        // Show success result
+        processingEl.style.display = 'none';
+        resultEl.style.display = 'flex';
+
+        // Display detected amount
+        if (data.bill && data.bill.detected_amount) {
+          resultAmount.textContent = `₹${data.bill.detected_amount.toLocaleString('en-IN')}`;
+        } else {
+          resultAmount.textContent = 'Amount not detected';
+        }
+
+        // Display confidence score
+        const confidenceEl = document.getElementById('resultConfidence');
+        if (confidenceEl && data.bill && typeof data.bill.confidence === 'number') {
+          const pct = Math.round(data.bill.confidence * 100);
+          let badgeClass = 'confidence-high';
+          if (pct < 60) badgeClass = 'confidence-low';
+          else if (pct < 80) badgeClass = 'confidence-medium';
+          
+          confidenceEl.innerHTML = `<span class="confidence-badge ${badgeClass}">${pct}% confidence</span>`;
+          confidenceEl.style.display = 'block';
+        } else if (confidenceEl) {
+          confidenceEl.style.display = 'none';
+        }
+
+        // Show link to uploaded file (local path)
+        if (resultViewLink && data.bill && data.bill.s3_url) {
+          resultViewLink.href = data.bill.s3_url;
+          resultViewLink.style.display = 'inline-flex';
+        }
+
+        // Show OCR text preview
+        if (data.bill && data.bill.ocr_text) {
+          ocrTextBox.textContent = data.bill.ocr_text;
+          ocrPreview.style.display = 'block';
+        }
+
+        // Show toast notification
+        if (window.ToastManager) {
+          ToastManager.show('Bill uploaded and processed successfully!', 'success');
+        }
+
+      } catch (error) {
+        console.error('Upload error:', error);
+        processingEl.style.display = 'none';
+        dropZone.style.display = 'flex';
+        
+        if (window.ToastManager) {
+          ToastManager.show(`Upload failed: ${error.message}`, 'error');
+        } else {
+          alert(`Upload failed: ${error.message}`);
+        }
+      }
+    }
+  }
+
+  // Initialize bill upload when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    initBillUpload();
+  });
 })();
