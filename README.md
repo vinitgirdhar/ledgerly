@@ -95,15 +95,7 @@ ledgerly-main/
 - For production, serve via a WSGI server (e.g., Gunicorn) behind a reverse proxy.
 - Ensure `uploads/logo.svg` path is reachable; replace with your brand assets if needed.
 
-## 🤝 Contributing
-
-1. Fork the repo.
-2. Create a feature branch.
-3. Keep styles in the existing CSS variable system.
-4. Test on mobile and desktop.
-5. Submit a pull request with a clear description.
-
-
 Built with ❤️ for India’s neighborhood shop owners.
+
 
 
