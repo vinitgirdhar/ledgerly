@@ -16,22 +16,33 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 import pytesseract
 from PIL import Image
+from pdf2image import convert_from_path
 import google.generativeai as genai
 import cv2
 import numpy as np
 
 from db import connect, default_db_path, init_db, query_one, query_all, exec_one
 
-# Configure Tesseract path (Windows default install location)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Configure Tesseract path with env override and PATH fallback
+_default_tesseract = Path(r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe")
+_env_tesseract = os.environ.get("TESSERACT_CMD")
 
-# Gemini Vision API key (optional)
+if _env_tesseract and Path(_env_tesseract).exists():
+    pytesseract.pytesseract.tesseract_cmd = _env_tesseract
+elif _default_tesseract.exists():
+    pytesseract.pytesseract.tesseract_cmd = str(_default_tesseract)
+else:
+    # Leave pytesseract to search PATH; helpful message on failure
+    print("[ledgerly] Tesseract executable not found at default location; relying on PATH.")
+
+# Gemini Vision API key (optional) and model override
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 # Allowed file extensions for bill uploads
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "pdf"}
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -79,6 +90,21 @@ def preprocess_bill_image(image_path: Path) -> Path:
         return processed_path
     except Exception:
         return image_path  # Return original on any error
+
+
+def pdf_to_image(pdf_path: Path) -> Path:
+    """Convert first page of PDF to an image file and return its path."""
+    poppler_path = os.environ.get("POPPLER_PATH")  # Optional: path to poppler bin on Windows
+    try:
+        images = convert_from_path(str(pdf_path), first_page=1, last_page=1, poppler_path=poppler_path)
+        if not images:
+            return pdf_path
+        out_path = pdf_path.with_suffix(".png")
+        images[0].save(out_path, "PNG")
+        return out_path
+    except Exception as e:
+        print(f"[ledgerly] PDF conversion failed: {e}")
+        return pdf_path
 
 # ================================
 # 🎯 STEP 3: EXTRACTION_PROMPT
@@ -180,6 +206,67 @@ def validate_bill_data(bill: dict) -> dict:
     
     return bill
 
+
+def _fallback_extract_from_ocr(ocr_text: str) -> dict:
+    """Lightweight regex-based extraction used when no Gemini API key is set."""
+    # Amount detection (reuse patterns similar to upload handler)
+    amount_patterns = [
+        r"(?:₹|Rs\.?|INR)\s*([\d,]+\.?\d*)",
+        r"Total[:\s]*([\d,]+\.?\d*)",
+        r"Amount[:\s]*([\d,]+\.?\d*)",
+        r"Grand\s*Total[:\s]*([\d,]+\.?\d*)",
+        r"\b([\d,]+\.\d{2})\b",
+    ]
+    detected_amount = None
+    for pattern in amount_patterns:
+        m = re.search(pattern, ocr_text, re.IGNORECASE)
+        if m:
+            try:
+                detected_amount = float(m.group(1).replace(",", ""))
+                break
+            except ValueError:
+                continue
+
+    # Date detection (simple dd/mm/yyyy or yyyy-mm-dd)
+    date_patterns = [
+        r"(\d{1,2}[\-/]\d{1,2}[\-/]\d{2,4})",
+        r"(\d{4}[\-/]\d{1,2}[\-/]\d{1,2})",
+    ]
+    bill_date = None
+    for pattern in date_patterns:
+        m = re.search(pattern, ocr_text)
+        if m:
+            bill_date = m.group(1)
+            break
+
+    # Vendor name: first non-empty line that isn't obviously a label
+    vendor_name = None
+    for line in ocr_text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if any(label in line.lower() for label in ["invoice", "bill", "date", "gst", "total", "amount"]):
+            continue
+        vendor_name = line
+        break
+
+    return {
+        "vendor_name": vendor_name,
+        "vendor_gstin": None,
+        "bill_number": None,
+        "bill_date": bill_date,
+        "items": [],
+        "subtotal": None,
+        "cgst_rate": None,
+        "cgst_amount": None,
+        "sgst_rate": None,
+        "sgst_amount": None,
+        "igst_rate": None,
+        "igst_amount": None,
+        "total_amount": detected_amount,
+        "confidence": 0.35 if detected_amount else 0.2,
+    }
+
 # ================================
 # 🧠 MAIN EXTRACTION PIPELINE
 # ================================
@@ -192,18 +279,19 @@ def run_gemini_structured(image_path: Path, ocr_text: str) -> dict | None:
     4. Apply rule-based validation
     """
     if not GEMINI_API_KEY:
-        return None
+        return _fallback_extract_from_ocr(ocr_text)
 
     try:
         # Preprocess image for better accuracy
         processed_path = preprocess_bill_image(image_path)
         
-        # Load image for Gemini
-        pil_image = Image.open(processed_path)
+        # Load image for Gemini (ensure RGB)
+        pil_image = Image.open(processed_path).convert("RGB")
         
         # STEP 3: First extraction pass
         extraction_prompt = EXTRACTION_PROMPT.format(ocr_text=ocr_text)
-        model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        model_name = GEMINI_MODEL or "gemini-1.5-flash"
+        model = genai.GenerativeModel(model_name)
         
         response = model.generate_content([extraction_prompt, pil_image])
         raw = response.text or ""
@@ -493,7 +581,7 @@ def create_app() -> Flask:
             return jsonify({"error": "empty_filename"}), 400
 
         if not allowed_file(file.filename):
-            return jsonify({"error": "invalid_file_type", "message": "Only image files (PNG, JPG, etc.) are allowed."}), 400
+            return jsonify({"error": "invalid_file_type", "message": "Only image files (PNG, JPG, PDF, etc.) are allowed."}), 400
 
         try:
             # Secure the filename and create unique storage key
@@ -515,12 +603,55 @@ def create_app() -> Flask:
                     (user_id, original_filename, str(local_path), public_url),
                 )
 
-            # Run Tesseract OCR on local file
-            image = Image.open(local_path)
-            ocr_text = pytesseract.image_to_string(image)
+                # Ensure image path (convert PDF first pages to image)
+                image_path = pdf_to_image(local_path) if local_path.suffix.lower() == ".pdf" else local_path
+
+                # If conversion failed (still PDF), return clear error about Poppler setup
+                if image_path.suffix.lower() == ".pdf":
+                    return jsonify({
+                        "error": "pdf_conversion_failed",
+                        "message": (
+                            "Could not convert PDF to image. Install Poppler and set POPPLER_PATH to its bin folder, "
+                            "then restart the server."
+                        )
+                    }), 500
+
+                # Run Tesseract OCR on local file
+                try:
+                    image = Image.open(image_path)
+                    ocr_text = pytesseract.image_to_string(image)
+                except pytesseract.TesseractNotFoundError:
+                    return jsonify({
+                        "error": "tesseract_missing",
+                        "message": (
+                            "Tesseract executable not found. Set TESSERACT_CMD to your tesseract.exe path "
+                            "or add it to PATH, then restart the server."
+                        )
+                    }), 500
+                except Exception as e:
+                    return jsonify({
+                        "error": "ocr_failed",
+                        "message": f"Failed to read image/PDF: {e}"
+                    }), 500
 
             # Use Gemini Vision to structure data (optional)
-            structured = run_gemini_structured(local_path, ocr_text) or {}
+            structured = run_gemini_structured(image_path, ocr_text) or {}
+
+            # If LLM/gemini returned nothing useful, fall back to OCR regex extraction
+            if not structured or (structured.get("total_amount") in (None, 0) and not structured.get("items")):
+                structured = _fallback_extract_from_ocr(ocr_text)
+
+            # Minimal item spotting heuristic: if no items but we have a total, create a single inferred line item
+            if structured.get("items") in (None, [], ()):  # empty items
+                total_val = structured.get("total_amount") or structured.get("detected_amount")
+                if total_val:
+                    structured["items"] = [{
+                        "description": "Inferred item",
+                        "hsn_code": None,
+                        "quantity": 1,
+                        "rate": total_val,
+                        "amount": total_val
+                    }]
             
             vendor_name = structured.get("vendor_name")
             vendor_gstin = structured.get("vendor_gstin")
@@ -601,6 +732,10 @@ def create_app() -> Flask:
                 }
             })
         except Exception as e:
+            # Log full error for debugging
+            import traceback
+            print("[ledgerly] upload_failed:", e)
+            traceback.print_exc()
             return jsonify({"error": "upload_failed", "message": str(e)}), 500
 
     @app.get("/api/bills")
@@ -641,204 +776,6 @@ def create_app() -> Flask:
             return jsonify({"error": "not_found"}), 404
 
         return jsonify({"ok": True, "bill": dict(row)})
-
-    # -------------------------
-    # Voice Entry API
-    # -------------------------
-    VOICE_EXTRACTION_PROMPT = """
-You are a financial data extraction AI for Indian shop owners.
-
-Given a voice transcript in Hinglish, Hindi, Marathi, or English, extract structured transaction information.
-
-Transcript: "{transcript}"
-
-Extract and return ONLY valid JSON in this format:
-{{
-  "entry_type": "income" or "expense",
-  "amount": <numeric amount>,
-  "items": [
-    {{
-      "name": "item name",
-      "quantity": <number>,
-      "unit": "kg/pcs/packet/etc",
-      "price": <price per unit or total>
-    }}
-  ],
-  "note": "brief description",
-  "customer_name": "name if mentioned" or null,
-  "vendor_name": "name if mentioned" or null
-}}
-
-Rules:
-- "becha" (sold), "liya" (bought), "khareed" (purchased) = income/expense indicators
-- Extract amounts in rupees (₹, rupaye, rupees)
-- Extract quantities (kilo, kg, pcs, pieces)
-- If entry_type unclear, default to "income" for sales
-- Return ONLY the JSON, no markdown or explanations.
-"""
-
-    def extract_voice_data_simple(transcript: str) -> dict:
-        """Fallback simple extraction using regex when Gemini is unavailable."""
-        import re
-        
-        transcript_lower = transcript.lower()
-        
-        # Determine entry type
-        entry_type = "income"  # default
-        if any(word in transcript_lower for word in ["khareed", "liya", "purchase", "bought", "expense"]):
-            entry_type = "expense"
-        elif any(word in transcript_lower for word in ["becha", "sold", "sale", "income"]):
-            entry_type = "income"
-        
-        # Extract amount (look for numbers with rupee indicators)
-        amount = None
-        amount_patterns = [
-            r"(?:₹|rupee|rupaye|rs\.?)\s*([\d,]+\.?\d*)",
-            r"([\d,]+\.?\d*)\s*(?:rupee|rupaye|rs\.?)",
-            r"([\d,]+\.?\d*)",
-        ]
-        for pattern in amount_patterns:
-            match = re.search(pattern, transcript_lower)
-            if match:
-                try:
-                    amount_str = match.group(1).replace(",", "")
-                    amount = float(amount_str)
-                    break
-                except (ValueError, IndexError):
-                    continue
-        
-        # Extract quantity and item name
-        items = []
-        quantity = None
-        unit = None
-        item_name = None
-        
-        # Pattern: "5 kilo chawal" or "10 kg rice"
-        item_pattern = r"([\d,]+\.?\d*)\s*(kilo|kg|pcs|pieces|packet|box)\s+(\w+)"
-        item_match = re.search(item_pattern, transcript_lower)
-        if item_match:
-            try:
-                quantity = float(item_match.group(1).replace(",", ""))
-                unit = item_match.group(2)
-                item_name = item_match.group(3)
-            except (ValueError, IndexError):
-                pass
-        
-        if item_name and quantity:
-            items.append({
-                "name": item_name,
-                "quantity": quantity,
-                "unit": unit or "pcs",
-                "price": amount / quantity if amount and quantity else None
-            })
-        
-        note = transcript.strip()
-        
-        return {
-            "entry_type": entry_type,
-            "amount": amount or 0,
-            "items": items,
-            "note": note,
-            "customer_name": None,
-            "vendor_name": None
-        }
-
-    @app.post("/api/voice/process")
-    def api_process_voice():
-        """Process voice transcript and create ledger entry."""
-        user_id = require_login()
-        if not user_id:
-            return jsonify({"error": "unauthorized"}), 401
-
-        data = request.get_json(silent=True) or {}
-        transcript = (data.get("transcript") or "").strip()
-
-        if not transcript:
-            return jsonify({"error": "transcript_required"}), 400
-
-        try:
-            extracted = None
-            
-            # Try Gemini extraction first (if API key available)
-            if GEMINI_API_KEY:
-                try:
-                    prompt = VOICE_EXTRACTION_PROMPT.format(transcript=transcript)
-                    model = genai.GenerativeModel("gemini-2.0-flash-exp")
-                    response = model.generate_content(prompt)
-                    raw = response.text or ""
-                    cleaned = _clean_json_text(raw)
-                    extracted = json.loads(cleaned)
-                except Exception as e:
-                    print(f"Gemini extraction failed: {e}, falling back to simple extraction")
-                    extracted = None
-
-            # Fallback to simple regex extraction
-            if not extracted:
-                extracted = extract_voice_data_simple(transcript)
-
-            # Validate extracted data
-            entry_type = extracted.get("entry_type", "income")
-            if entry_type not in {"income", "expense"}:
-                entry_type = "income"
-
-            amount = extracted.get("amount", 0)
-            if not amount or amount <= 0:
-                # Try to extract amount from transcript directly
-                import re
-                amount_match = re.search(r"([\d,]+\.?\d*)", transcript)
-                if amount_match:
-                    try:
-                        amount = float(amount_match.group(1).replace(",", ""))
-                    except ValueError:
-                        pass
-
-            if amount <= 0:
-                return jsonify({"error": "amount_not_found", "message": "Could not extract amount from transcript."}), 400
-
-            note = extracted.get("note") or transcript
-            items = extracted.get("items", [])
-            
-            # Format note with item details if available
-            if items:
-                item_strs = []
-                for item in items:
-                    qty = item.get("quantity", 1)
-                    unit = item.get("unit", "")
-                    name = item.get("name", "")
-                    price = item.get("price")
-                    if price:
-                        item_strs.append(f"{qty} {unit} {name} @ ₹{price:.2f}")
-                    else:
-                        item_strs.append(f"{qty} {unit} {name}")
-                if item_strs:
-                    note = f"{transcript} | Items: {', '.join(item_strs)}"
-
-            # Create ledger entry
-            with get_conn() as conn:
-                entry_id = exec_one(
-                    conn,
-                    "INSERT INTO entries (user_id, entry_type, amount, note) VALUES (?,?,?,?)",
-                    (user_id, entry_type, float(amount), note),
-                )
-
-                # Fetch the created entry
-                row = query_one(
-                    conn,
-                    "SELECT id, entry_type, amount, note, created_at FROM entries WHERE id = ?",
-                    (entry_id,),
-                )
-
-            return jsonify({
-                "ok": True,
-                "entry": dict(row),
-                "items": items,
-            })
-
-        except json.JSONDecodeError as e:
-            return jsonify({"error": "extraction_failed", "message": f"Failed to parse extracted data: {str(e)}"}), 500
-        except Exception as e:
-            print(f"Voice processing error: {e}")
-            return jsonify({"error": "processing_failed", "message": str(e)}), 500
 
     return app
 

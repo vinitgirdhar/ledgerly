@@ -181,13 +181,13 @@
         <article class="pulse-card" id="ledger">
           <header>
             <h2>Ledger snapshot</h2>
-            <span class="tag tag-green" id="ledgerTotalAmount">₹0</span>
+            <span class="tag tag-green">₹1,82,940</span>
           </header>
           <p>Track income vs expenses, reconcile GST and see anomalies in minutes.</p>
           <ul class="stat-grid">
-            <li><span class="stat-label">Total entries</span><span class="stat-value" id="totalEntriesCount">0</span></li>
-            <li><span class="stat-label">Expenses today</span><span class="stat-value" id="expensesTodayAmount">₹0</span></li>
-            <li><span class="stat-label">Income today</span><span class="stat-value" id="incomeTodayAmount">₹0</span></li>
+            <li><span class="stat-label">Invoices pending</span><span class="stat-value">6</span></li>
+            <li><span class="stat-label">Expenses today</span><span class="stat-value">₹12,450</span></li>
+            <li><span class="stat-label">GST ready</span><span class="stat-value">92%</span></li>
           </ul>
           <button type="button" class="action-btn" data-modal-target="ledgerModal">View live ledger</button>
         </article>
@@ -223,34 +223,40 @@
 
         <div class="billing-grid">
           <div class="billing-summary">
-            <div class="billing-ring" role="img" aria-label="Total income">
-              <div class="billing-total" id="billingTotalIncome">₹0</div>
-              <span class="billing-label">Total Income</span>
+            <div class="billing-ring" role="img" aria-label="Collections 58 percent">
+              <div class="billing-total">₹23.4L</div>
+              <span class="billing-label">Collections</span>
               <ul class="billing-ring-legend">
-                <li><span class="dot dot-collect"></span>Income entries</li>
-                <li><span class="dot dot-due"></span>Expense entries</li>
+                <li><span class="dot dot-collect"></span>Cleared</li>
+                <li><span class="dot dot-due"></span>Due soon</li>
+                <li><span class="dot dot-overdue"></span>Overdue</li>
               </ul>
             </div>
-            <div class="billing-status" id="billingStatusChips">
-              <!-- Status chips will be populated dynamically -->
+            <div class="billing-status">
+              <div class="billing-chip">12 invoices awaiting approval</div>
+              <div class="billing-chip">Last payout: ₹5.6L · 2h ago</div>
+              <div class="billing-chip billing-chip--alert">3 GST filings due by Friday</div>
             </div>
           </div>
 
           <div class="billing-metrics">
             <article class="billing-card">
-              <h3>Total income</h3>
-              <p class="billing-amount" id="totalIncomeAmount">₹0</p>
-              <p class="billing-note" id="totalIncomeNote">From all income entries</p>
+              <h3>Payments received</h3>
+              <p class="billing-amount">₹14,56,800</p>
+              <span class="billing-trend billing-trend--up">+12%</span>
+              <p class="billing-note">Across 188 invoices this period</p>
             </article>
             <article class="billing-card">
-              <h3>Total expenses</h3>
-              <p class="billing-amount" id="totalExpensesAmount">₹0</p>
-              <p class="billing-note" id="totalExpensesNote">From all expense entries</p>
+              <h3>Payments requested</h3>
+              <p class="billing-amount">₹6,23,400</p>
+              <span class="billing-trend billing-trend--steady">0%</span>
+              <p class="billing-note">Awaiting UPI confirmation</p>
             </article>
             <article class="billing-card">
-              <h3>Net balance</h3>
-              <p class="billing-amount" id="netBalanceAmount">₹0</p>
-              <p class="billing-note" id="netBalanceNote">Income - Expenses</p>
+              <h3>Outstanding</h3>
+              <p class="billing-amount">₹3,78,600</p>
+              <span class="billing-trend billing-trend--down">-5%</span>
+              <p class="billing-note">Auto reminders on</p>
             </article>
           </div>
         </div>
@@ -278,7 +284,46 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- Entries will be loaded dynamically via JavaScript -->
+                <tr data-status="paid">
+                  <td>INV-4581</td>
+                  <td>Samantha Traders</td>
+                  <td>₹56,856</td>
+                  <td>UPI</td>
+                  <td><span class="status-pill status-pill--paid">Paid</span></td>
+                  <td>Today</td>
+                </tr>
+                <tr data-status="due">
+                  <td>INV-4590</td>
+                  <td>Bright Kirana</td>
+                  <td>₹45,640</td>
+                  <td>Bank transfer</td>
+                  <td><span class="status-pill status-pill--due">Due soon</span></td>
+                  <td>In 2 days</td>
+                </tr>
+                <tr data-status="overdue">
+                  <td>INV-4586</td>
+                  <td>Ravi Enterprises</td>
+                  <td>₹23,780</td>
+                  <td>Cash</td>
+                  <td><span class="status-pill status-pill--overdue">Overdue</span></td>
+                  <td>3 days</td>
+                </tr>
+                <tr data-status="paid">
+                  <td>INV-4587</td>
+                  <td>Ananya Stores</td>
+                  <td>₹12,400</td>
+                  <td>UPI</td>
+                  <td><span class="status-pill status-pill--paid">Paid</span></td>
+                  <td>Yesterday</td>
+                </tr>
+                <tr data-status="due">
+                  <td>INV-4588</td>
+                  <td>Manoj Dairy</td>
+                  <td>₹34,860</td>
+                  <td>Credit</td>
+                  <td><span class="status-pill status-pill--due">Due soon</span></td>
+                  <td>Tomorrow</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -328,46 +373,69 @@
         </div>
       </section>
 
-      <section class="insights" aria-label="Today's highlights">
+      <section class="insights" aria-label="Today’s highlights">
         <div class="insight-card">
-          <h3>Recent entries</h3>
-          <ul id="recentEntriesList">
-            <!-- Recent entries will be populated dynamically -->
+          <h3>Tasks due</h3>
+          <ul>
+            <li><span>Approve 3 OCR invoices</span><span class="pill">Due 11:00</span></li>
+            <li><span>Listen to new voice note</span><span class="pill">Due noon</span></li>
+            <li><span>Respond to BI chat follow-up</span><span class="pill">Due 15:30</span></li>
           </ul>
         </div>
         <div class="insight-card">
-          <h3>Activity summary</h3>
-          <ul id="activitySummaryList">
-            <!-- Activity summary will be populated dynamically -->
+          <h3>Database activity</h3>
+          <ul>
+            <li><strong>09:12</strong> Ledger updated after voice entry</li>
+            <li><strong>09:55</strong> Invoice #4581 pushed to GST queue</li>
+            <li><strong>10:10</strong> Answer shared with owner Top selling SKU</li>
           </ul>
         </div>
         <div class="insight-card">
-          <h3>Quick stats</h3>
-          <ul id="quickStatsList">
-            <!-- Quick stats will be populated dynamically -->
-          </ul>
+          <h3>Shop settings</h3>
+          <p>GSTIN verified. Auto-reply to CA is ON. Reminder emails configured for Mondays.</p>
+          <a href="#settings" class="link">Open settings →</a>
         </div>
       </section>
 
       <section class="ledger-panels" id="settings">
         <div class="panel large" aria-labelledby="ledger-breakdown">
           <h3 id="ledger-breakdown">Income vs Expense</h3>
-          <div class="bars" id="incomeExpenseBars">
-            <div class="bar bar-income" style="--pct: 0%">
-              <span class="bar-label" id="incomeBarLabel">Income ₹0</span>
+          <div class="bars">
+            <div class="bar bar-income" style="--pct: 72%">
+              <span class="bar-label">Income ₹3.2L</span>
             </div>
-            <div class="bar bar-expense" style="--pct: 0%">
-              <span class="bar-label" id="expenseBarLabel">Expense ₹0</span>
+            <div class="bar bar-expense" style="--pct: 48%">
+              <span class="bar-label">Expense ₹2.1L</span>
             </div>
-            <div class="bar bar-profit" style="--pct: 0%">
-              <span class="bar-label" id="profitBarLabel">Net ₹0</span>
+            <div class="bar bar-profit" style="--pct: 24%">
+              <span class="bar-label">Net ₹1.1L</span>
             </div>
           </div>
         </div>
         <div class="panel">
-          <h3>Recent activity</h3>
-          <ul class="alert-list" id="recentActivityList">
-            <!-- Recent activity will be populated dynamically -->
+          <h3>Ledger alerts</h3>
+          <ul class="alert-list">
+            <li class="alert">
+              <span class="dot dot-yellow"></span>
+              <div>
+                <p class="alert-title">Low stock: premium atta</p>
+                <p class="alert-copy">Voice entry flagged stock below reorder point.</p>
+              </div>
+            </li>
+            <li class="alert">
+              <span class="dot dot-pink"></span>
+              <div>
+                <p class="alert-title">GST anomaly</p>
+                <p class="alert-copy">Invoice #4576 missing HSN code. Review before filing.</p>
+              </div>
+            </li>
+            <li class="alert">
+              <span class="dot dot-blue"></span>
+              <div>
+                <p class="alert-title">SQL chat answered</p>
+                <p class="alert-copy">Question Sabse zyada margin wala item? logged.</p>
+              </div>
+            </li>
           </ul>
         </div>
       </section>
@@ -386,9 +454,91 @@
           </div>
         </header>
 
-        <div class="schedule-grid" role="list" id="scheduleGrid">
-          <!-- Schedule will be populated dynamically based on entries -->
-          <p style="text-align: center; padding: 2rem; grid-column: 1 / -1;">No scheduled items. Entries will appear here based on your activity.</p>
+        <div class="schedule-grid" role="list">
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Mon</span>
+              <span class="date">12 Feb</span>
+            </header>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Upload kirana invoices</p>
+              <p class="schedule-meta">09:00 · Staff app</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">Weekly owner sync</p>
+              <p class="schedule-meta">12:30 · Video</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Tue</span>
+              <span class="date">13 Feb</span>
+            </header>
+            <div class="schedule-card long" data-kind="compliance">
+              <p class="schedule-title">GST filing review</p>
+              <p class="schedule-meta">10:00 · Accountant desk</p>
+              <span class="schedule-badge badge-compliance">Compliance</span>
+            </div>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Voice entry follow-up</p>
+              <p class="schedule-meta">16:00 · WhatsApp bot</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Wed</span>
+              <span class="date">14 Feb</span>
+            </header>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">Supplier negotiation</p>
+              <p class="schedule-meta">11:30 · Store</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Expense audit</p>
+              <p class="schedule-meta">14:00 · Ledgerly desktop</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Thu</span>
+              <span class="date">15 Feb</span>
+            </header>
+            <div class="schedule-card long" data-kind="compliance">
+              <p class="schedule-title">Inventory reconciliation</p>
+              <p class="schedule-meta">09:30 · Warehouse</p>
+              <span class="schedule-badge badge-compliance">Compliance</span>
+            </div>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">CA office drop</p>
+              <p class="schedule-meta">17:00 · Shivajinagar</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Fri</span>
+              <span class="date">16 Feb</span>
+            </header>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Cash drawer tally</p>
+              <p class="schedule-meta">19:00 · Counter</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">Team retro</p>
+              <p class="schedule-meta">20:30 · Café</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -524,7 +674,7 @@
               <div class="device-mock">
                 <!-- Upload Drop Zone -->
                 <div class="upload-drop-zone" id="uploadDropZone">
-                  <input type="file" id="billFileInput" accept="image/*" style="display: none;">
+                  <input type="file" id="billFileInput" accept="image/*,.pdf" style="display: none;">
                   <div class="upload-icon">📷</div>
                   <p class="upload-label">Click to upload or drag image here</p>
                   <p class="upload-hint">Supports JPG, PNG, WebP (max 10MB)</p>
@@ -597,10 +747,10 @@
                 <div class="voice-wave">
                   <span></span><span></span><span></span><span></span><span></span>
                 </div>
-                <p class="voice-transcript">"5 kilo chawal 500 rupaye mein becha"</p>
+                <p class="voice-transcript">“5 kilo chawal 500 rupaye mein becha”</p>
                 <div class="voice-controls">
-                  <button type="button" class="voice-btn" id="voiceRecordBtn">Record</button>
-                  <button type="button" class="voice-btn" id="voiceProcessBtn">Process</button>
+                  <button type="button" class="voice-btn" data-toast="Recording saved to queue." data-intent="info">Record</button>
+                  <button type="button" class="voice-btn" data-toast="Ledger created a draft invoice." data-intent="success">Process</button>
                 </div>
               </div>
             </div>
@@ -629,7 +779,7 @@
                 </div>
               </div>
               <div class="modal-actions">
-                <button type="button" class="modal-primary" id="voiceSimulateBtn">Simulate entry</button>
+                <button type="button" class="modal-primary" data-toast="Voice note processed with ₹500 revenue." data-intent="success">Simulate entry</button>
                 <button type="button" class="modal-secondary" data-modal-close>Close</button>
               </div>
             </div>
@@ -656,7 +806,27 @@
                   <span>Credit</span>
                   <span>Balance</span>
                 </div>
-                <!-- Ledger entries will be loaded dynamically via JavaScript -->
+                <div class="ledger-row">
+                  <span>15 Feb</span>
+                  <span>Invoice #4587 · Kirana sale</span>
+                  <span></span>
+                  <span>₹12,400</span>
+                  <span>₹3,42,890</span>
+                </div>
+                <div class="ledger-row">
+                  <span>15 Feb</span>
+                  <span>Cash purchase · Packaging</span>
+                  <span>₹2,150</span>
+                  <span></span>
+                  <span>₹3,40,740</span>
+                </div>
+                <div class="ledger-row">
+                  <span>14 Feb</span>
+                  <span>GST payout · Jan</span>
+                  <span>₹18,560</span>
+                  <span></span>
+                  <span>₹3,22,180</span>
+                </div>
               </div>
             </div>
             <div class="modal-pane">
@@ -906,6 +1076,5 @@
   </script>
   <script src="/script/dashboard.js"></script>
   <script src="/script/bill-upload.js"></script>
-  <script src="/script/voice-entry.js"></script>
 </body>
 </html>

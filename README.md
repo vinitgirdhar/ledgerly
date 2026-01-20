@@ -1,7 +1,7 @@
 # Ledgerly
 
-A smart, voice‑first accounting and insights platform for small Indian shop owners.  
-Ledgerly turns photos of bills, voice notes, and everyday transactions into GST‑ready invoices, real‑time dashboards, and actionable growth insights—no spreadsheets required.
+Turn Bills Into Business Intelligence - A smart, voice‑first accounting and insights platform for small Indian shop owners.  
+Ledgerly transforms photos of bills, voice notes, and everyday transactions into GST‑ready invoices, real‑time dashboards, and actionable growth insights—no spreadsheets required.
 
 ## ✨ What it does
 
