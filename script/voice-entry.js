@@ -189,9 +189,21 @@
         await new Promise(resolve => setTimeout(resolve, 500));
       }
       
+      // If no transcribed text, use the sample text from the modal (for demo/simulation)
+      if (!transcribedText.trim()) {
+        const transcriptEl = document.querySelector('#voiceModal .voice-transcript');
+        if (transcriptEl) {
+          // Extract text from quotes, e.g., "5 kilo chawal 500 rupaye mein becha"
+          const displayedText = transcriptEl.textContent.replace(/^[""]|[""]$/g, '').trim();
+          if (displayedText && displayedText !== 'Listening... Speak now' && displayedText !== 'Recording complete. Click Simulate entry to process.' && displayedText !== 'No speech detected. Please try again.') {
+            transcribedText = displayedText;
+          }
+        }
+      }
+      
       if (!transcribedText.trim()) {
         if (window.ToastManager) {
-          ToastManager.show('Please record something first.', 'error');
+          ToastManager.show('Please record something first or use the sample text.', 'error');
         } else {
           alert('Please record something first.');
         }
