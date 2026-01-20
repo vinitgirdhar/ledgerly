@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BharatFresh Case Study - Ledgerly</title>
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .case-hero {
+            padding: 6rem 0 4rem;
+            background: linear-gradient(135deg, var(--background) 0%, var(--background-accent) 100%);
+        }
+        .case-hero-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .case-hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        .case-hero .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .case-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 1px solid var(--card-border);
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .case-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 0;
+        }
+        .case-section {
+            margin-bottom: 3rem;
+        }
+        .case-section h2 {
+            font-size: 2rem;
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+        }
+        .case-section p {
+            color: var(--text);
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+        .case-section ul {
+            color: var(--text);
+            line-height: 1.7;
+            margin-left: 1.5rem;
+        }
+        .case-section li {
+            margin-bottom: 0.5rem;
+        }
+        .case-visual-full {
+            margin: 3rem 0;
+            border-radius: 1.6rem;
+            overflow: hidden;
+            box-shadow: 0 18px 38px -28px rgba(31, 26, 54, 0.4);
+        }
+        .case-visual-full video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: 2rem;
+            transition: color 0.2s ease;
+        }
+        .back-button:hover {
+            color: var(--primary);
+        }
+        .cta-section {
+            background: var(--surface-alt);
+            padding: 3rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin: 3rem 0;
+        }
+        .cta-section h3 {
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 768px) {
+            .case-hero h1 {
+                font-size: 2rem;
+            }
+            .case-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-button">← Back to Ledgerly</a>
+    </div>
+
+    <section class="case-hero">
+        <div class="container">
+            <div class="case-hero-content">
+                <span class="eyebrow">Case Study</span>
+                <h1>An AI Upgrade for BharatFresh's Kirana Network</h1>
+                <p class="subtitle">How Ledgerly transformed 15,000 kirana stores from manual bookkeeping to AI-powered financial intelligence in just 6 weeks.</p>
+                
+                <div class="case-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">15,000+</div>
+                        <div class="stat-label">Stores onboarded in 6 weeks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">94%</div>
+                        <div class="stat-label">Manual ledger work automated</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">₹58 Cr</div>
+                        <div class="stat-label">Working capital unlocked</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="case-content">
+            <div class="case-visual-full">
+                <video autoplay muted loop playsinline>
+                    <source src="/uploads/loginvideo.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <div class="case-section">
+                <h2>The Challenge</h2>
+                <p>BharatFresh, one of India's largest kirana store networks, was struggling with a massive operational bottleneck. Their 15,000+ stores were drowning in paperwork, with each store owner spending 3-4 hours daily on manual bookkeeping. The result? Delayed financial insights, compliance nightmares, and millions in lost working capital.</p>
+                
+                <ul>
+                    <li>Manual data entry across thousands of stores</li>
+                    <li>Inconsistent GST compliance and filing delays</li>
+                    <li>No real-time visibility into network performance</li>
+                    <li>High operational costs and human errors</li>
+                </ul>
+            </div>
+
+            <div class="case-section">
+                <h2>The Solution</h2>
+                <p>Ledgerly deployed a comprehensive AI-powered transformation that digitized the entire financial workflow. Our solution combined computer vision, natural language processing, and automated GST compliance to create a seamless experience for kirana store owners.</p>
+                
+                <ul>
+                    <li>Voice-first bookkeeping in regional languages</li>
+                    <li>AI-powered bill scanning and GST extraction</li>
+                    <li>Real-time dashboards and business insights</li>
+                    <li>Automated GST filing and compliance management</li>
+                </ul>
+            </div>
+
+            <div class="case-section">
+                <h2>The Implementation</h2>
+                <p>The rollout was executed in phases over 6 weeks, with careful attention to the unique needs of kirana store owners. We provided hands-on training, multilingual support, and 24/7 assistance to ensure smooth adoption.</p>
+                
+                <ul>
+                    <li>Week 1-2: Pilot with 500 stores, feedback collection</li>
+                    <li>Week 3-4: Regional language expansion and optimization</li>
+                    <li>Week 5-6: Full network rollout and go-live support</li>
+                </ul>
+            </div>
+
+            <div class="case-section">
+                <h2>The Results</h2>
+                <p>The transformation exceeded all expectations. Store owners now spend less than 30 minutes daily on financial tasks, while BharatFresh's leadership has unprecedented visibility into network performance.</p>
+                
+                <ul>
+                    <li>94% reduction in manual bookkeeping time</li>
+                    <li>100% GST compliance across the network</li>
+                    <li>₹58 crores in working capital unlocked through better visibility</li>
+                    <li>Real-time insights enabling data-driven decisions</li>
+                </ul>
+            </div>
+
+            <div class="cta-section">
+                <h3>Ready to transform your business?</h3>
+                <p>Join thousands of businesses using Ledgerly to turn bills into business intelligence.</p>
+                <a href="/" class="btn btn-primary btn-large">Get Started with Ledgerly</a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <img src="/uploads/logo.svg" alt="Ledgerly Logo" class="logo-img">
+                <span>Ledgerly</span>
+            </div>
+            <p>© <span id="year"></span> Ledgerly. Built in India for India.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

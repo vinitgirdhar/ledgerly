@@ -321,9 +321,10 @@
 
     async function handleFileUpload(file) {
       // Validate file type
-      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        alert('Please upload an image file (PNG, JPG, WebP, etc.)');
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (!isImage && !isPdf) {
+        alert('Please upload an image or PDF file (PNG, JPG, WebP, PDF).');
         return;
       }
 

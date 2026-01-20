@@ -52,8 +52,10 @@
     });
 
     function handleFileUpload(file) {
-      if (!file.type.startsWith('image/')) {
-        alert('Please upload an image file (JPG, PNG).');
+      const isImage = file.type.startsWith('image/');
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      if (!isImage && !isPdf) {
+        alert('Please upload an image or PDF file (JPG, PNG, PDF).');
         return;
       }
 
