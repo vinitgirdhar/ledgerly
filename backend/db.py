@@ -50,6 +50,7 @@ def init_db(db_path: Path) -> None:
                 entry_type TEXT NOT NULL CHECK(entry_type IN ('income','expense')),
                 amount REAL NOT NULL,
                 note TEXT,
+                source TEXT DEFAULT 'manual' CHECK(source IN ('manual','voice','bill_upload')),
                 vendor_name TEXT,
                 vendor_gstin TEXT,
                 bill_number TEXT,
@@ -121,6 +122,7 @@ def init_db(db_path: Path) -> None:
         add_column_if_missing("bills", "items_json", "TEXT")
 
         # Entries table migrations (for GST ledger)
+        add_column_if_missing("entries", "source", "TEXT DEFAULT 'manual'")
         add_column_if_missing("entries", "vendor_name", "TEXT")
         add_column_if_missing("entries", "vendor_gstin", "TEXT")
         add_column_if_missing("entries", "bill_number", "TEXT")

@@ -77,6 +77,22 @@
         
         if (data.ok && data.bill) {
           showResult(data.bill);
+          
+          // Refresh the entries table to show the new bill entry
+          if (typeof window.refreshDashboardEntries === 'function') {
+            console.log('Refreshing dashboard entries after bill upload...');
+            window.refreshDashboardEntries();
+          }
+          
+          // Show success toast
+          if (window.ToastManager) {
+            const amount = data.bill.total_amount || data.bill.detected_amount || 0;
+            const vendor = data.bill.vendor_name || 'Unknown Vendor';
+            ToastManager.show(
+              `Bill processed! ₹${amount.toLocaleString('en-IN')} from ${vendor} added to ledger.`,
+              'success'
+            );
+          }
         } else {
           alert('Upload failed: ' + (data.error || 'Unknown error'));
           uploadDropZone.style.display = 'flex';

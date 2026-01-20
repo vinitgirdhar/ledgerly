@@ -230,63 +230,150 @@ def validate_bill_data(bill: dict) -> dict:
 
 
 def _fallback_extract_from_ocr(ocr_text: str) -> dict:
-    """Lightweight regex-based extraction used when no Gemini API key is set."""
-    # Amount detection (reuse patterns similar to upload handler)
+    """Improved regex-based extraction used when no Gemini API key is set."""
+    # Amount detection - comprehensive patterns for Indian bills
     amount_patterns = [
+        # Specific total patterns (higher priority)
+        r"(?:Grand\s*Total|Net\s*Amount|Total\s*Amount|Amount\s*Payable)[:\s]*(?:₹|Rs\.?|INR)?\s*([\d,]+\.?\d*)",
+        r"(?:Grand\s*Total|Net\s*Amount|Total\s*Amount|Amount\s*Payable)[:\s]*([\d,]+\.?\d*)",
+        r"(?:₹|Rs\.?|INR)\s*([\d,]+\.?\d*)\s*(?:only|/-)?",
+        r"Total[:\s]*(?:₹|Rs\.?|INR)?\s*([\d,]+\.?\d*)",
+        r"Amount[:\s]*(?:₹|Rs\.?|INR)?\s*([\d,]+\.?\d*)",
+        # Generic currency patterns
         r"(?:₹|Rs\.?|INR)\s*([\d,]+\.?\d*)",
-        r"Total[:\s]*([\d,]+\.?\d*)",
-        r"Amount[:\s]*([\d,]+\.?\d*)",
-        r"Grand\s*Total[:\s]*([\d,]+\.?\d*)",
+        # Fallback: numbers with decimal places (likely amounts)
         r"\b([\d,]+\.\d{2})\b",
+        # Last resort: any large number (>100) could be an amount
+        r"\b(\d{3,}(?:,\d{3})*(?:\.\d{2})?)\b",
     ]
-    detected_amount = None
+    
+    # Collect all potential amounts
+    all_amounts = []
     for pattern in amount_patterns:
-        m = re.search(pattern, ocr_text, re.IGNORECASE)
-        if m:
+        matches = re.findall(pattern, ocr_text, re.IGNORECASE)
+        for match in matches:
             try:
-                detected_amount = float(m.group(1).replace(",", ""))
-                break
+                amt = float(match.replace(",", ""))
+                if amt > 0:
+                    all_amounts.append(amt)
             except ValueError:
                 continue
+    
+    # Use the largest amount as the total (common pattern in bills)
+    detected_amount = max(all_amounts) if all_amounts else None
+    
+    # GSTIN detection (15 alphanumeric: 2 digits + 10 alphanumeric + 1 digit + 1 alphanumeric + 1 alphanumeric)
+    gstin_pattern = r"\b(\d{2}[A-Z]{5}\d{4}[A-Z]\d[A-Z\d]{2})\b"
+    gstin_match = re.search(gstin_pattern, ocr_text.upper())
+    vendor_gstin = gstin_match.group(1) if gstin_match else None
 
-    # Date detection (simple dd/mm/yyyy or yyyy-mm-dd)
+    # Date detection (multiple formats)
     date_patterns = [
+        r"(?:Date|Dt\.?|Dated)[:\s]*(\d{1,2}[\-/\.]\d{1,2}[\-/\.]\d{2,4})",
         r"(\d{1,2}[\-/]\d{1,2}[\-/]\d{2,4})",
         r"(\d{4}[\-/]\d{1,2}[\-/]\d{1,2})",
+        r"(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})",
     ]
     bill_date = None
     for pattern in date_patterns:
-        m = re.search(pattern, ocr_text)
+        m = re.search(pattern, ocr_text, re.IGNORECASE)
         if m:
             bill_date = m.group(1)
             break
 
-    # Vendor name: first non-empty line that isn't obviously a label
+    # Bill/Invoice number detection
+    bill_number = None
+    bill_num_patterns = [
+        r"(?:Invoice|Bill|Receipt)\s*(?:No\.?|Number|#)[:\s]*([A-Z0-9\-/]+)",
+        r"(?:No\.?|#)[:\s]*([A-Z0-9\-/]{3,})",
+    ]
+    for pattern in bill_num_patterns:
+        m = re.search(pattern, ocr_text, re.IGNORECASE)
+        if m:
+            bill_number = m.group(1)
+            break
+
+    # GST amount detection
+    cgst_amount = None
+    sgst_amount = None
+    igst_amount = None
+    
+    cgst_match = re.search(r"CGST[:\s@%\d]*(?:₹|Rs\.?)?\s*([\d,]+\.?\d*)", ocr_text, re.IGNORECASE)
+    if cgst_match:
+        try:
+            cgst_amount = float(cgst_match.group(1).replace(",", ""))
+        except ValueError:
+            pass
+    
+    sgst_match = re.search(r"SGST[:\s@%\d]*(?:₹|Rs\.?)?\s*([\d,]+\.?\d*)", ocr_text, re.IGNORECASE)
+    if sgst_match:
+        try:
+            sgst_amount = float(sgst_match.group(1).replace(",", ""))
+        except ValueError:
+            pass
+            
+    igst_match = re.search(r"IGST[:\s@%\d]*(?:₹|Rs\.?)?\s*([\d,]+\.?\d*)", ocr_text, re.IGNORECASE)
+    if igst_match:
+        try:
+            igst_amount = float(igst_match.group(1).replace(",", ""))
+        except ValueError:
+            pass
+
+    # Subtotal/taxable amount
+    subtotal = None
+    subtotal_match = re.search(r"(?:Sub\s*Total|Taxable\s*(?:Value|Amount))[:\s]*(?:₹|Rs\.?)?\s*([\d,]+\.?\d*)", ocr_text, re.IGNORECASE)
+    if subtotal_match:
+        try:
+            subtotal = float(subtotal_match.group(1).replace(",", ""))
+        except ValueError:
+            pass
+
+    # Vendor name: first non-empty line that looks like a business name
     vendor_name = None
-    for line in ocr_text.splitlines():
+    lines = ocr_text.splitlines()
+    skip_labels = ["invoice", "bill", "date", "gst", "total", "amount", "tax", "receipt", "cash", "credit", "payment"]
+    for line in lines[:10]:  # Check first 10 lines only
         line = line.strip()
-        if not line:
+        if not line or len(line) < 3:
             continue
-        if any(label in line.lower() for label in ["invoice", "bill", "date", "gst", "total", "amount"]):
+        line_lower = line.lower()
+        # Skip lines that are clearly labels or numbers
+        if any(label in line_lower for label in skip_labels):
             continue
-        vendor_name = line
+        if re.match(r"^[\d\s\-/\.,:₹]+$", line):  # Skip pure number/date lines
+            continue
+        # Likely a vendor name
+        vendor_name = line[:50]  # Limit length
         break
+
+    # Calculate confidence based on what we found
+    confidence = 0.3  # Base confidence
+    if detected_amount and detected_amount > 10:
+        confidence += 0.25
+    if vendor_gstin:
+        confidence += 0.15
+    if bill_date:
+        confidence += 0.1
+    if vendor_name:
+        confidence += 0.1
+    if cgst_amount or sgst_amount or igst_amount:
+        confidence += 0.1
 
     return {
         "vendor_name": vendor_name,
-        "vendor_gstin": None,
-        "bill_number": None,
+        "vendor_gstin": vendor_gstin,
+        "bill_number": bill_number,
         "bill_date": bill_date,
         "items": [],
-        "subtotal": None,
+        "subtotal": subtotal,
         "cgst_rate": None,
-        "cgst_amount": None,
+        "cgst_amount": cgst_amount,
         "sgst_rate": None,
-        "sgst_amount": None,
+        "sgst_amount": sgst_amount,
         "igst_rate": None,
-        "igst_amount": None,
+        "igst_amount": igst_amount,
         "total_amount": detected_amount,
-        "confidence": 0.35 if detected_amount else 0.2,
+        "confidence": min(1.0, confidence),
     }
 
 def extract_voice_data_simple(transcript: str) -> dict:
@@ -616,7 +703,7 @@ def create_app() -> Flask:
         with get_conn() as conn:
             rows = query_all(
                 conn,
-                "SELECT id, entry_type, amount, note, created_at FROM entries WHERE user_id = ? ORDER BY id DESC",
+                "SELECT id, entry_type, amount, note, source, created_at FROM entries WHERE user_id = ? ORDER BY id DESC",
                 (user_id,),
             )
 
@@ -732,14 +819,14 @@ def create_app() -> Flask:
             with get_conn() as conn:
                 entry_id = exec_one(
                     conn,
-                    "INSERT INTO entries (user_id, entry_type, amount, note) VALUES (?,?,?,?)",
-                    (user_id, entry_type, float(amount), note),
+                    "INSERT INTO entries (user_id, entry_type, amount, note, source) VALUES (?,?,?,?,?)",
+                    (user_id, entry_type, float(amount), note, 'voice'),
                 )
 
                 # Fetch the created entry
                 row = query_one(
                     conn,
-                    "SELECT id, entry_type, amount, note, created_at FROM entries WHERE id = ?",
+                    "SELECT id, entry_type, amount, note, source, created_at FROM entries WHERE id = ?",
                     (entry_id,),
                 )
 
@@ -1026,10 +1113,10 @@ def create_app() -> Flask:
                     exec_one(
                         conn,
                         """INSERT INTO entries (
-                            user_id, entry_type, amount, note, 
+                            user_id, entry_type, amount, note, source,
                             vendor_name, vendor_gstin, bill_number, bill_date,
                             taxable_amount, cgst_amount, sgst_amount, igst_amount
-                        ) VALUES (?, 'expense', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        ) VALUES (?, 'expense', ?, ?, 'bill_upload', ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (
                             user_id, total_amount, note,
                             vendor_name, vendor_gstin, bill_number, bill_date,

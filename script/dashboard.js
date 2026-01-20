@@ -44,13 +44,21 @@
         const date = formatDate(entry.created_at);
         const note = entry.note || 'No description';
         const truncatedNote = note.length > 40 ? note.substring(0, 40) + '...' : note;
+        
+        // Determine source type display
+        let sourceDisplay = 'Voice/Manual';
+        if (entry.source === 'bill_upload') {
+          sourceDisplay = 'Bill Upload';
+        } else if (entry.source === 'voice') {
+          sourceDisplay = 'Voice Entry';
+        }
 
         return `
           <tr data-status="${status}" data-entry-id="${entry.id}">
             <td>ENT-${entry.id}</td>
             <td title="${escapeHtml(note)}">${escapeHtml(truncatedNote)}</td>
             <td>₹${amount}</td>
-            <td>${entry.entry_type === 'income' ? 'Voice/Manual' : 'Voice/Manual'}</td>
+            <td>${sourceDisplay}</td>
             <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
             <td>${date}</td>
           </tr>
