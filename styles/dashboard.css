@@ -1331,12 +1331,19 @@ tbody tr[data-muted="true"] {
   padding: 0.8rem 1rem;
   font-size: 0.98rem;
   line-height: 1.45;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .chat-bubble--user {
   background: rgba(255, 214, 102, 0.35);
   justify-self: start;
   color: var(--primary);
+  max-width: 85%;
 }
 
 .chat-bubble--ai {
@@ -1344,6 +1351,30 @@ tbody tr[data-muted="true"] {
   color: #fff;
   justify-self: end;
   max-width: 90%;
+}
+
+.chat-bubble--ai strong {
+  color: #ffd666;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+
+.chat-window:empty::before {
+  content: 'Start a conversation with Ledgerly AI...';
+  color: #888;
+  font-style: italic;
+  display: block;
+  text-align: center;
+  padding: 2rem;
 }
 
 .wizard-body {

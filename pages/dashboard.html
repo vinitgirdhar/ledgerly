@@ -836,15 +836,17 @@
           </header>
           <div class="modal-body">
             <div class="modal-pane">
-              <div class="chat-window">
-                <div class="chat-bubble chat-bubble--user">Is hafte ka profit kitna hai?</div>
-                <div class="chat-bubble chat-bubble--ai">
-                  This week you generated <strong>₹1,12,450</strong> in revenue, expenses were <strong>₹78,300</strong>. Net profit totals <strong>₹34,150</strong>, up 8% vs last week.
-                </div>
-                <div class="chat-bubble chat-bubble--user">Sabse zyada margin wala item?</div>
-                <div class="chat-bubble chat-bubble--ai">
-                  <strong>Premium basmati (42%)</strong> drives the highest margin. Recommend restocking before Friday based on run-rate.
-                </div>
+              <div class="chat-window" id="chatWindow">
+                <!-- Dynamic chat messages will appear here -->
+              </div>
+              <div class="chat-input-container" style="display: flex; gap: 0.5rem; margin-top: 1rem; padding: 0.5rem; background: #f8f9fa; border-radius: 8px;">
+                <input type="text" id="chatInput" 
+                       placeholder="Ask in Hindi/English: 'Aaj kitna kamaya?' or 'Total expense'"
+                       style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+                <button type="button" id="chatSendBtn" 
+                        style="padding: 0.75rem 1.25rem; background: #1a1a2e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                  Send
+                </button>
               </div>
             </div>
             <div class="modal-pane">
@@ -1043,5 +1045,6 @@
   <script src="/script/dashboard.js"></script>
   <script src="/script/bill-upload.js"></script>
   <script src="/script/voice-entry.js"></script>
+  <script src="/script/ai-chat.js"></script>
 </body>
 </html>

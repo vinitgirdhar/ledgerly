@@ -37,7 +37,7 @@ else:
 
 # Gemini Vision API key (optional) and model override
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -467,7 +467,7 @@ def run_gemini_structured(image_path: Path, ocr_text: str) -> dict | None:
         
         # STEP 3: First extraction pass
         extraction_prompt = EXTRACTION_PROMPT.format(ocr_text=ocr_text)
-        model_name = GEMINI_MODEL or "gemini-1.5-flash"
+        model_name = GEMINI_MODEL or "gemini-2.0-flash"
         model = genai.GenerativeModel(model_name)
         
         response = model.generate_content([extraction_prompt, pil_image])
@@ -763,7 +763,7 @@ def create_app() -> Flask:
             if GEMINI_API_KEY:
                 try:
                     prompt = VOICE_EXTRACTION_PROMPT.format(transcript=transcript)
-                    model_name = GEMINI_MODEL if 'GEMINI_MODEL' in globals() else "gemini-1.5-flash"
+                    model_name = GEMINI_MODEL if 'GEMINI_MODEL' in globals() else "gemini-2.0-flash"
                     model = genai.GenerativeModel(model_name)
                     # Helper for response handling
                     response = model.generate_content(prompt)
@@ -1187,9 +1187,300 @@ def create_app() -> Flask:
 
         return jsonify({"ok": True, "bill": dict(row)})
 
+    # -------------------------
+    # Insights / BI Query API
+    # -------------------------
+    INSIGHTS_SYSTEM_PROMPT = """You are a BI query generator for Ledgerly, a ledger/accounting system for small Indian businesses.
+
+DATABASE SCHEMA:
+- entries(id, user_id, entry_type TEXT ['income','expense'], amount REAL, note TEXT, source TEXT ['manual','voice','bill_upload'], vendor_name TEXT, created_at TEXT)
+
+USER QUERIES (Hindi/English/Hinglish mixed):
+- "Kal ka galla" → yesterday's total income
+- "Aaj kitna kamaya" → today's total income
+- "Aaj kitna kharch" → today's total expenses
+- "Cash me kitna" → requires payment_mode which doesn't exist, use total income
+- "GST kitna laga" → total from bill_upload entries (as they have GST)
+- "Total income" → sum of all income entries
+- "Total expense" → sum of all expense entries
+- "Last 7 din" → last 7 days data
+- "Iss hafte" → this week's data
+- "Iss mahine" → this month's data
+
+OUTPUT FORMAT (JSON ONLY, NO MARKDOWN, NO CODE BLOCKS):
+{"sql": "SELECT ...", "chart": "bar|pie|line|none", "title": "Human readable title", "value_format": "currency|number|percent"}
+
+RULES:
+1. Output ONLY valid JSON - no ```json blocks, no explanations, no markdown
+2. Use SQLite date functions: date('now'), date('now', '-1 day'), date('now', '-7 days')
+3. created_at is stored as 'YYYY-MM-DD HH:MM:SS' format
+4. For date comparisons use: date(created_at) = date('now')
+5. Chart types: "bar" for trends, "pie" for breakdowns, "line" for time series, "none" for single values
+6. Always filter by user_id = {user_id} for security
+7. For "kal" (yesterday): WHERE date(created_at) = date('now', '-1 day')
+8. For "aaj" (today): WHERE date(created_at) = date('now')
+9. For aggregations return: SELECT SUM(amount), entry_type FROM entries WHERE ... GROUP BY entry_type
+10. For trends return: SELECT date(created_at) as day, SUM(amount) FROM entries WHERE ... GROUP BY day ORDER BY day
+"""
+
+    def parse_ai_response(raw: str) -> dict:
+        """Aggressive JSON extraction from Gemini response."""
+        clean = raw.strip()
+        
+        # Try direct parse first
+        try:
+            return json.loads(clean)
+        except json.JSONDecodeError:
+            pass
+        
+        # Strip markdown code blocks
+        if "```json" in clean:
+            clean = clean.split("```json")[1]
+        if "```" in clean:
+            parts = clean.split("```")
+            for part in parts:
+                part = part.strip()
+                if part.startswith("{"):
+                    clean = part
+                    break
+            else:
+                clean = parts[0].strip()
+        
+        # Remove leading "json" if present
+        if clean.startswith("json"):
+            clean = clean[4:].strip()
+        
+        # Try parsing again
+        try:
+            return json.loads(clean)
+        except json.JSONDecodeError:
+            pass
+        
+        # Extract JSON object using regex
+        match = re.search(r'\{[^{}]*\}', clean, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+        
+        raise ValueError(f"Could not parse AI response: {raw[:200]}")
+
+    def validate_sql(sql: str, user_id: int) -> str:
+        """Basic SQL validation to prevent injection and ensure user filtering."""
+        sql_lower = sql.lower().strip()
+        
+        # Only allow SELECT statements
+        if not sql_lower.startswith("select"):
+            raise ValueError("Only SELECT queries are allowed")
+        
+        # Block dangerous keywords
+        dangerous = ["drop", "delete", "update", "insert", "alter", "create", "truncate", ";"]
+        for keyword in dangerous:
+            if keyword in sql_lower:
+                raise ValueError(f"Dangerous SQL keyword detected: {keyword}")
+        
+        # Ensure user_id filter is present
+        if "user_id" not in sql_lower:
+            # Add user_id filter
+            if "where" in sql_lower:
+                sql = sql.replace("WHERE", f"WHERE user_id = {user_id} AND", 1)
+                sql = sql.replace("where", f"WHERE user_id = {user_id} AND", 1)
+            else:
+                # Find FROM clause and add WHERE
+                sql = re.sub(r'(FROM\s+entries)', f'\\1 WHERE user_id = {user_id}', sql, flags=re.IGNORECASE)
+        
+        return sql
+
+    @app.post("/api/insights/ask")
+    def api_insights_ask():
+        """Process natural language query and return insights from database."""
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        data = request.get_json(silent=True) or {}
+        question = (data.get("question") or "").strip()
+
+        if not question:
+            return jsonify({"error": "question_required"}), 400
+
+        try:
+            # Use Gemini to convert question to SQL
+            if not GEMINI_API_KEY:
+                return jsonify({
+                    "error": "gemini_not_configured",
+                    "message": "Please set GEMINI_API_KEY in .env file for AI-powered insights"
+                }), 400
+
+            prompt = INSIGHTS_SYSTEM_PROMPT.replace("{user_id}", str(user_id)) + f"\n\nUser question: {question}"
+            
+            model = genai.GenerativeModel(GEMINI_MODEL or "gemini-2.0-flash")
+            response = model.generate_content(prompt)
+            raw_response = response.text or ""
+
+            # Parse AI response
+            ai_result = parse_ai_response(raw_response)
+            sql = ai_result.get("sql", "")
+            chart_type = ai_result.get("chart", "none")
+            title = ai_result.get("title", "Query Result")
+            value_format = ai_result.get("value_format", "currency")
+
+            if not sql:
+                return jsonify({"error": "no_sql_generated", "message": "Could not generate SQL from question"}), 400
+
+            # Validate and sanitize SQL
+            sql = validate_sql(sql, user_id)
+
+            # Execute query
+            with get_conn() as conn:
+                rows = conn.execute(sql).fetchall()
+                columns = [desc[0] for desc in conn.execute(sql).description] if rows else []
+
+            # Format response based on chart type
+            if chart_type == "none" or len(rows) == 1:
+                # Single value result
+                value = rows[0][0] if rows and rows[0][0] is not None else 0
+                return jsonify({
+                    "ok": True,
+                    "title": title,
+                    "value": value,
+                    "value_format": value_format,
+                    "chart": "none",
+                    "data": None,
+                    "sql": sql  # For debugging
+                })
+            else:
+                # Chart data result
+                data_points = []
+                for row in rows:
+                    if len(row) >= 2:
+                        data_points.append({
+                            "label": str(row[0]) if row[0] else "Unknown",
+                            "value": float(row[1]) if row[1] else 0
+                        })
+                    elif len(row) == 1:
+                        data_points.append({
+                            "label": "Total",
+                            "value": float(row[0]) if row[0] else 0
+                        })
+
+                total_value = sum(dp["value"] for dp in data_points)
+
+                return jsonify({
+                    "ok": True,
+                    "title": title,
+                    "value": total_value,
+                    "value_format": value_format,
+                    "chart": chart_type,
+                    "data": data_points,
+                    "sql": sql  # For debugging
+                })
+
+        except ValueError as e:
+            return jsonify({"error": "validation_failed", "message": str(e)}), 400
+        except Exception as e:
+            print(f"[ledgerly] Insights query error: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({"error": "query_failed", "message": str(e)}), 500
+
+    @app.get("/api/insights/summary")
+    def api_insights_summary():
+        """Get summary statistics for insights dashboard."""
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        try:
+            with get_conn() as conn:
+                # Total income (all time)
+                total_income = query_one(conn, 
+                    "SELECT COALESCE(SUM(amount), 0) FROM entries WHERE user_id = ? AND entry_type = 'income'",
+                    (user_id,)
+                )[0]
+
+                # Total expenses (all time)
+                total_expenses = query_one(conn,
+                    "SELECT COALESCE(SUM(amount), 0) FROM entries WHERE user_id = ? AND entry_type = 'expense'",
+                    (user_id,)
+                )[0]
+
+                # This week income
+                week_income = query_one(conn,
+                    """SELECT COALESCE(SUM(amount), 0) FROM entries 
+                       WHERE user_id = ? AND entry_type = 'income' 
+                       AND date(created_at) >= date('now', '-7 days')""",
+                    (user_id,)
+                )[0]
+
+                # This week expenses
+                week_expenses = query_one(conn,
+                    """SELECT COALESCE(SUM(amount), 0) FROM entries 
+                       WHERE user_id = ? AND entry_type = 'expense' 
+                       AND date(created_at) >= date('now', '-7 days')""",
+                    (user_id,)
+                )[0]
+
+                # Today's income
+                today_income = query_one(conn,
+                    """SELECT COALESCE(SUM(amount), 0) FROM entries 
+                       WHERE user_id = ? AND entry_type = 'income' 
+                       AND date(created_at) = date('now')""",
+                    (user_id,)
+                )[0]
+
+                # Today's expenses
+                today_expenses = query_one(conn,
+                    """SELECT COALESCE(SUM(amount), 0) FROM entries 
+                       WHERE user_id = ? AND entry_type = 'expense' 
+                       AND date(created_at) = date('now')""",
+                    (user_id,)
+                )[0]
+
+                # Entry count by source
+                source_counts = query_all(conn,
+                    """SELECT COALESCE(source, 'manual') as src, COUNT(*) as cnt 
+                       FROM entries WHERE user_id = ? GROUP BY src""",
+                    (user_id,)
+                )
+
+                # Last 7 days trend
+                daily_trend = query_all(conn,
+                    """SELECT date(created_at) as day, 
+                              SUM(CASE WHEN entry_type = 'income' THEN amount ELSE 0 END) as income,
+                              SUM(CASE WHEN entry_type = 'expense' THEN amount ELSE 0 END) as expense
+                       FROM entries WHERE user_id = ? AND date(created_at) >= date('now', '-7 days')
+                       GROUP BY day ORDER BY day""",
+                    (user_id,)
+                )
+
+            net_cash = total_income - total_expenses
+            week_net = week_income - week_expenses
+
+            return jsonify({
+                "ok": True,
+                "summary": {
+                    "total_income": total_income,
+                    "total_expenses": total_expenses,
+                    "net_cash": net_cash,
+                    "week_income": week_income,
+                    "week_expenses": week_expenses,
+                    "week_net": week_net,
+                    "today_income": today_income,
+                    "today_expenses": today_expenses,
+                    "source_breakdown": [{"source": r[0], "count": r[1]} for r in source_counts],
+                    "daily_trend": [{"day": r[0], "income": r[1], "expense": r[2]} for r in daily_trend]
+                }
+            })
+
+        except Exception as e:
+            print(f"[ledgerly] Insights summary error: {e}")
+            return jsonify({"error": "summary_failed", "message": str(e)}), 500
+
     return app
 
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=False)
