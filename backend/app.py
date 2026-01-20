@@ -476,6 +476,137 @@ def create_app() -> Flask:
         return jsonify({"ok": True, "entry": {"id": entry_id, "entry_type": entry_type, "amount": amount_val, "note": note}})
 
     # -------------------------
+    # Business Profile API
+    # -------------------------
+    def calculate_profile_completion(profile: dict) -> int:
+        """Calculate profile completion percentage based on filled fields."""
+        score = 0
+        if profile.get("business_name"):
+            score += 33
+        if profile.get("gstin"):
+            score += 34
+        if profile.get("business_type"):
+            score += 33
+        return min(100, score)
+
+    def validate_gstin(gstin: str) -> bool:
+        """Validate GSTIN format (15 alphanumeric characters)."""
+        if not gstin or len(gstin) != 15:
+            return False
+        return gstin.isalnum()
+
+    @app.get("/api/profile")
+    def api_get_profile():
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        with get_conn() as conn:
+            profile = query_one(
+                conn,
+                """SELECT business_name, gstin, business_type, address, phone,
+                          bank_name, bank_account_number, bank_ifsc,
+                          profile_completion_pct, catalog_completion_pct,
+                          inventory_completion_pct, integrations_completion_pct
+                   FROM business_profiles WHERE user_id = ?""",
+                (user_id,)
+            )
+
+        if profile is None:
+            # Return default empty profile
+            return jsonify({
+                "ok": True,
+                "profile": {
+                    "business_name": None,
+                    "gstin": None,
+                    "business_type": None,
+                    "address": None,
+                    "phone": None,
+                    "bank_name": None,
+                    "bank_account_number": None,
+                    "bank_ifsc": None,
+                    "profile_completion_pct": 0,
+                    "catalog_completion_pct": 0,
+                    "inventory_completion_pct": 0,
+                    "integrations_completion_pct": 0
+                }
+            })
+
+        return jsonify({"ok": True, "profile": dict(profile)})
+
+    @app.post("/api/profile")
+    def api_update_profile():
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        data = request.get_json(silent=True) or {}
+        business_name = (data.get("business_name") or "").strip() or None
+        gstin = (data.get("gstin") or "").strip().upper() or None
+        business_type = (data.get("business_type") or "").strip().lower() or None
+        address = (data.get("address") or "").strip() or None
+        phone = (data.get("phone") or "").strip() or None
+        bank_name = (data.get("bank_name") or "").strip() or None
+        bank_account_number = (data.get("bank_account_number") or "").strip() or None
+        bank_ifsc = (data.get("bank_ifsc") or "").strip().upper() or None
+
+        # Validate GSTIN if provided
+        if gstin and not validate_gstin(gstin):
+            return jsonify({"error": "gstin_invalid", "message": "GSTIN must be 15 alphanumeric characters"}), 400
+
+        # Validate business type
+        if business_type and business_type not in {"retail", "wholesale", "services", "other"}:
+            return jsonify({"error": "business_type_invalid"}), 400
+
+        # Calculate completion percentage
+        profile_data = {
+            "business_name": business_name,
+            "gstin": gstin,
+            "business_type": business_type
+        }
+        completion_pct = calculate_profile_completion(profile_data)
+
+        with get_conn() as conn:
+            # Check if profile exists
+            existing = query_one(conn, "SELECT id FROM business_profiles WHERE user_id = ?", (user_id,))
+
+            if existing:
+                # Update existing profile
+                conn.execute(
+                    """UPDATE business_profiles SET
+                       business_name = ?, gstin = ?, business_type = ?, address = ?, phone = ?,
+                       bank_name = ?, bank_account_number = ?, bank_ifsc = ?,
+                       profile_completion_pct = ?, updated_at = datetime('now')
+                       WHERE user_id = ?""",
+                    (business_name, gstin, business_type, address, phone,
+                     bank_name, bank_account_number, bank_ifsc, completion_pct, user_id)
+                )
+            else:
+                # Create new profile
+                exec_one(
+                    conn,
+                    """INSERT INTO business_profiles
+                       (user_id, business_name, gstin, business_type, address, phone,
+                        bank_name, bank_account_number, bank_ifsc, profile_completion_pct)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (user_id, business_name, gstin, business_type, address, phone,
+                     bank_name, bank_account_number, bank_ifsc, completion_pct)
+                )
+
+            # Fetch updated profile
+            profile = query_one(
+                conn,
+                """SELECT business_name, gstin, business_type, address, phone,
+                          bank_name, bank_account_number, bank_ifsc,
+                          profile_completion_pct, catalog_completion_pct,
+                          inventory_completion_pct, integrations_completion_pct
+                   FROM business_profiles WHERE user_id = ?""",
+                (user_id,)
+            )
+
+        return jsonify({"ok": True, "profile": dict(profile)})
+
+    # -------------------------
     # Bills / OCR API
     # -------------------------
     @app.post("/api/bills/upload")

@@ -564,22 +564,23 @@
             <section class="wizard-panel" id="step-profile" role="tabpanel">
               <h3>Shop profile</h3>
               <p>Tell us about your business so invoices and reports carry the right brand.</p>
-              <form class="wizard-form">
+              <form class="wizard-form" id="profileForm">
                 <label>
                   Business name
-                  <input type="text" placeholder="Shree Ganesh Kirana" autocomplete="organization" />
+                  <input type="text" id="businessName" placeholder="Shree Ganesh Kirana" autocomplete="organization" />
                 </label>
                 <label>
                   GSTIN
-                  <input type="text" placeholder="27ABCDE1234F1Z5" autocomplete="off" />
+                  <input type="text" id="gstin" placeholder="27ABCDE1234F1Z5" autocomplete="off" maxlength="15" />
                 </label>
                 <label>
                   Business type
-                  <select>
-                    <option>Retail store</option>
-                    <option>Wholesale</option>
-                    <option>Services</option>
-                    <option>Other</option>
+                  <select id="businessType">
+                    <option value="">Select type</option>
+                    <option value="retail">Retail store</option>
+                    <option value="wholesale">Wholesale</option>
+                    <option value="services">Services</option>
+                    <option value="other">Other</option>
                   </select>
                 </label>
                 <div class="wizard-actions">
@@ -592,7 +593,8 @@
               <p>Upload a price list so Ledgerly can spot fast movers and margins.</p>
               <div class="upload-drop">
                 <p><strong>Drag & drop</strong> CSV / XLSX / PDF price lists</p>
-                <button type="button" class="ghost-btn" data-toast="Sample template downloaded." data-intent="info">Download template</button>
+                <input type="file" id="catalogFileInput" accept=".csv,.xlsx,.xls,.pdf" style="display: none;">
+                <button type="button" class="ghost-btn" id="downloadTemplateBtn">Download template</button>
               </div>
               <div class="wizard-actions">
                 <button type="button" class="modal-secondary" data-nav-step="profile">« Back</button>

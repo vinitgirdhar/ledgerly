@@ -67,11 +67,46 @@
     const totalEl = document.querySelector('[data-progress-total]');
 
     const completion = {
-      profile: 45,
+      profile: 0,
       catalog: 0,
       inventory: 0,
-      integrations: 20,
+      integrations: 0,
     };
+
+    // Load progress from backend
+    async function loadProgress() {
+      try {
+        const response = await fetch('/api/profile');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok && data.profile) {
+            completion.profile = data.profile.profile_completion_pct || 0;
+            completion.catalog = data.profile.catalog_completion_pct || 0;
+            completion.inventory = data.profile.inventory_completion_pct || 0;
+            completion.integrations = data.profile.integrations_completion_pct || 0;
+
+            // Populate form fields if data exists
+            const businessNameInput = document.getElementById('businessName');
+            const gstinInput = document.getElementById('gstin');
+            const businessTypeSelect = document.getElementById('businessType');
+
+            if (businessNameInput && data.profile.business_name) {
+              businessNameInput.value = data.profile.business_name;
+            }
+            if (gstinInput && data.profile.gstin) {
+              gstinInput.value = data.profile.gstin;
+            }
+            if (businessTypeSelect && data.profile.business_type) {
+              businessTypeSelect.value = data.profile.business_type;
+            }
+
+            updateProgressDisplay();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load progress:', error);
+      }
+    }
 
     const minStepPercent = {
       profile: 45,
@@ -81,9 +116,11 @@
     };
 
     const updateProgressDisplay = () => {
+      // Calculate overall completion based on profile, catalog, and inventory only
+      // Integrations is optional and doesn't count toward main setup
+      const mainSteps = ['profile', 'catalog', 'inventory'];
       const avg = Math.round(
-        Object.values(completion).reduce((sum, val) => sum + val, 0) /
-          Object.keys(completion).length
+        mainSteps.reduce((sum, key) => sum + (completion[key] || 0), 0) / mainSteps.length
       );
       if (totalEl) totalEl.textContent = `${avg}%`;
 
@@ -125,14 +162,56 @@
     });
 
     modal.querySelectorAll('[data-complete-step]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const step = btn.dataset.completeStep;
         if (!step) return;
 
-        const current = completion[step] || 0;
-        const bump = Math.max(minStepPercent[step] || 20, current + 30);
-        completion[step] = Math.min(100, bump);
-        updateProgressDisplay();
+        // Handle profile step specially - save to backend
+        if (step === 'profile') {
+          const businessNameInput = document.getElementById('businessName');
+          const gstinInput = document.getElementById('gstin');
+          const businessTypeSelect = document.getElementById('businessType');
+
+          if (!businessNameInput || !gstinInput || !businessTypeSelect) return;
+
+          const profileData = {
+            business_name: businessNameInput.value.trim(),
+            gstin: gstinInput.value.trim(),
+            business_type: businessTypeSelect.value,
+          };
+
+          try {
+            const response = await fetch('/api/profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(profileData),
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.ok && data.profile) {
+                completion.profile = data.profile.profile_completion_pct || 0;
+                completion.catalog = data.profile.catalog_completion_pct || 0;
+                completion.inventory = data.profile.inventory_completion_pct || 0;
+                completion.integrations = data.profile.integrations_completion_pct || 0;
+                updateProgressDisplay();
+              }
+            } else {
+              const error = await response.json();
+              console.error('Failed to save profile:', error);
+              return;
+            }
+          } catch (error) {
+            console.error('Failed to save profile:', error);
+            return;
+          }
+        } else {
+          // For other steps, just bump the local state
+          const current = completion[step] || 0;
+          const bump = Math.max(minStepPercent[step] || 20, current + 30);
+          completion[step] = Math.min(100, bump);
+          updateProgressDisplay();
+        }
 
         const currentIndex = wizardSteps.findIndex((item) => item.dataset.step === step);
         const next = wizardSteps[currentIndex + 1];
@@ -147,7 +226,39 @@
       });
     });
 
-    updateProgressDisplay();
+    // Load progress on initialization
+    loadProgress();
+
+    // Template download functionality
+    const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    if (downloadTemplateBtn) {
+      downloadTemplateBtn.addEventListener('click', () => {
+        // Create CSV template
+        const csvContent = [
+          ['Product Name', 'SKU/Code', 'Category', 'Unit Price', 'Tax Rate (%)', 'HSN Code'],
+          ['Example Product 1', 'SKU001', 'Groceries', '100', '5', '1001'],
+          ['Example Product 2', 'SKU002', 'Beverages', '50', '12', '2202'],
+          ['Example Product 3', 'SKU003', 'Snacks', '25', '18', '1905']
+        ].map(row => row.join(',')).join('\n');
+
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'ledgerly_product_catalog_template.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Show success toast
+        if (window.ToastManager) {
+          ToastManager.show('Template downloaded successfully!', 'success');
+        }
+      });
+    }
   }
 
   // ================================

@@ -79,6 +79,28 @@ def init_db(db_path: Path) -> None:
             );
 
             CREATE INDEX IF NOT EXISTS idx_bills_user_id ON bills(user_id);
+
+            CREATE TABLE IF NOT EXISTS business_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                business_name TEXT,
+                gstin TEXT,
+                business_type TEXT CHECK(business_type IN ('retail','wholesale','services','other')),
+                address TEXT,
+                phone TEXT,
+                bank_name TEXT,
+                bank_account_number TEXT,
+                bank_ifsc TEXT,
+                profile_completion_pct INTEGER DEFAULT 0,
+                catalog_completion_pct INTEGER DEFAULT 0,
+                inventory_completion_pct INTEGER DEFAULT 0,
+                integrations_completion_pct INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_business_profiles_user_id ON business_profiles(user_id);
             """
         )
 
