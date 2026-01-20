@@ -2,10 +2,112 @@
   document.addEventListener('DOMContentLoaded', () => {
     initGreetingAndUser();
     initOnboardingWizard();
+    initEntriesTable();
     if (window.ToastManager) {
       ToastManager.attachTriggers(document);
     }
   });
+
+  // -------------------------
+  // Entries Table Functions
+  // -------------------------
+  function initEntriesTable() {
+    loadEntries();
+    initTableFilters();
+  }
+
+  async function loadEntries() {
+    const tbody = document.getElementById('entriesTableBody');
+    if (!tbody) return;
+
+    try {
+      const response = await fetch('/api/entries', { credentials: 'same-origin' });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #888;">Failed to load entries</td></tr>';
+        return;
+      }
+
+      const entries = data.entries || [];
+      
+      if (entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #888;">No entries yet. Use voice entry or upload a bill to add your first entry!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = entries.map((entry, index) => {
+        const status = entry.entry_type === 'income' ? 'paid' : 'due';
+        const statusLabel = entry.entry_type === 'income' ? 'Income' : 'Expense';
+        const statusClass = entry.entry_type === 'income' ? 'status-pill--paid' : 'status-pill--due';
+        const amount = parseFloat(entry.amount).toLocaleString('en-IN');
+        const date = formatDate(entry.created_at);
+        const note = entry.note || 'No description';
+        const truncatedNote = note.length > 40 ? note.substring(0, 40) + '...' : note;
+
+        return `
+          <tr data-status="${status}" data-entry-id="${entry.id}">
+            <td>ENT-${entry.id}</td>
+            <td title="${escapeHtml(note)}">${escapeHtml(truncatedNote)}</td>
+            <td>₹${amount}</td>
+            <td>${entry.entry_type === 'income' ? 'Voice/Manual' : 'Voice/Manual'}</td>
+            <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
+            <td>${date}</td>
+          </tr>
+        `;
+      }).join('');
+
+    } catch (error) {
+      console.error('Error loading entries:', error);
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #888;">Error loading entries</td></tr>';
+    }
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return 'Unknown';
+    const date = new Date(dateStr.replace(' ', 'T'));
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function initTableFilters() {
+    const filterChips = document.querySelectorAll('.filter-chip[data-status]');
+    filterChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        filterChips.forEach(c => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+        
+        const status = chip.dataset.status;
+        const rows = document.querySelectorAll('#entriesTableBody tr[data-entry-id]');
+        
+        rows.forEach(row => {
+          if (status === 'all') {
+            row.style.display = '';
+          } else if (status === 'paid') {
+            row.style.display = row.dataset.status === 'paid' ? '' : 'none';
+          } else if (status === 'due' || status === 'overdue') {
+            row.style.display = row.dataset.status === 'due' ? '' : 'none';
+          }
+        });
+      });
+    });
+  }
+
+  // Expose refresh function globally for voice-entry.js to call
+  window.refreshDashboardEntries = loadEntries;
 
   function initGreetingAndUser() {
     // Fetch current user

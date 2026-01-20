@@ -276,53 +276,17 @@
               <thead>
                 <tr>
                   <th scope="col">#</th>
-                  <th scope="col">Customer</th>
+                  <th scope="col">Description</th>
                   <th scope="col">Amount</th>
-                  <th scope="col">Channel</th>
+                  <th scope="col">Type</th>
                   <th scope="col">Status</th>
-                  <th scope="col">Due</th>
+                  <th scope="col">Date</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr data-status="paid">
-                  <td>INV-4581</td>
-                  <td>Samantha Traders</td>
-                  <td>₹56,856</td>
-                  <td>UPI</td>
-                  <td><span class="status-pill status-pill--paid">Paid</span></td>
-                  <td>Today</td>
-                </tr>
-                <tr data-status="due">
-                  <td>INV-4590</td>
-                  <td>Bright Kirana</td>
-                  <td>₹45,640</td>
-                  <td>Bank transfer</td>
-                  <td><span class="status-pill status-pill--due">Due soon</span></td>
-                  <td>In 2 days</td>
-                </tr>
-                <tr data-status="overdue">
-                  <td>INV-4586</td>
-                  <td>Ravi Enterprises</td>
-                  <td>₹23,780</td>
-                  <td>Cash</td>
-                  <td><span class="status-pill status-pill--overdue">Overdue</span></td>
-                  <td>3 days</td>
-                </tr>
-                <tr data-status="paid">
-                  <td>INV-4587</td>
-                  <td>Ananya Stores</td>
-                  <td>₹12,400</td>
-                  <td>UPI</td>
-                  <td><span class="status-pill status-pill--paid">Paid</span></td>
-                  <td>Yesterday</td>
-                </tr>
-                <tr data-status="due">
-                  <td>INV-4588</td>
-                  <td>Manoj Dairy</td>
-                  <td>₹34,860</td>
-                  <td>Credit</td>
-                  <td><span class="status-pill status-pill--due">Due soon</span></td>
-                  <td>Tomorrow</td>
+              <tbody id="entriesTableBody">
+                <!-- Entries will be loaded dynamically -->
+                <tr>
+                  <td colspan="6" style="text-align: center; padding: 2rem; color: #888;">Loading entries...</td>
                 </tr>
               </tbody>
             </table>
@@ -751,8 +715,8 @@
                 </div>
                 <p class="voice-transcript">“5 kilo chawal 500 rupaye mein becha”</p>
                 <div class="voice-controls">
-                  <button type="button" class="voice-btn" data-toast="Recording saved to queue." data-intent="info">Record</button>
-                  <button type="button" class="voice-btn" data-toast="Ledger created a draft invoice." data-intent="success">Process</button>
+                  <button type="button" class="voice-btn" id="voiceRecordBtn">Record</button>
+                  <button type="button" class="voice-btn" id="voiceProcessBtn">Process</button>
                 </div>
               </div>
             </div>
@@ -781,7 +745,7 @@
                 </div>
               </div>
               <div class="modal-actions">
-                <button type="button" class="modal-primary" data-toast="Voice note processed with ₹500 revenue." data-intent="success">Simulate entry</button>
+                <button type="button" class="modal-primary" id="voiceSimulateBtn">Simulate entry</button>
                 <button type="button" class="modal-secondary" data-modal-close>Close</button>
               </div>
             </div>
@@ -1078,5 +1042,6 @@
   </script>
   <script src="/script/dashboard.js"></script>
   <script src="/script/bill-upload.js"></script>
+  <script src="/script/voice-entry.js"></script>
 </body>
 </html>
