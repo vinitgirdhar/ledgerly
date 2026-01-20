@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ledgerly Shop Owner Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles/dashboard.css" />
+</head>
+<body>
+  <div class="dashboard-shell">
+    <aside class="side-nav">
+      <div class="brand">
+        <img src="../uploads/logo.svg" alt="Ledgerly logo" class="brand-logo" />
+        <div class="brand-copy">
+          <span class="brand-name">Ledgerly</span>
+          <span class="brand-tag">Shop owner hub</span>
+        </div>
+      </div>
+
+      <nav class="nav-groups">
+        <div class="nav-group">
+          <p class="nav-label">General</p>
+          <a href="#overview" class="nav-link is-active">Dashboard</a>
+          <a href="#billing-overview" class="nav-link">Billing overview</a>
+          <a href="#ledger" class="nav-link">Ledger</a>
+          <a href="#automations" class="nav-link">Automations</a>
+          <a href="#settings" class="nav-link">Shop settings</a>
+          <a href="/insights" class="nav-link">Insights studio →</a>
+        </div>
+        <div class="nav-group">
+          <p class="nav-label">Capture</p>
+          <a href="#upload-flow" class="nav-link">Upload bill</a>
+          <a href="#voice-flow" class="nav-link">Voice entry</a>
+          <a href="#chat-flow" class="nav-link">Ask Ledgerly</a>
+        </div>
+        <div class="nav-group">
+          <p class="nav-label">Operations</p>
+          <a href="#schedule" class="nav-link">Schedule</a>
+        </div>
+      </nav>
+
+      <div class="nav-footer">
+        <a href="/" class="help-link">← Back to site</a>
+        <button class="logout-btn" id="logoutBtn" type="button">Log out</button>
+      </div>
+    </aside>
+
+    <main class="main-area" id="overview">
+      <header class="main-header">
+        <div>
+          <p class="eyebrow">Good morning</p>
+          <h1 class="headline">Namaste, shop owner!</h1>
+          <p class="sub">Ledgerly has summarised todays finances and workflows for you.</p>
+        </div>
+        <div class="header-tools">
+          <label class="search">
+            <span class="sr-only">Search ledger</span>
+            <input type="search" placeholder="Search invoices, expenses, voice notes9" />
+          </label>
+          <div class="date-card">
+            <span class="date-label">Today</span>
+            <span class="date-value" id="todayDate"></span>
+          </div>
+        </div>
+      </header>
+
+      <section class="setup-strip" id="setup" aria-label="Setup progress">
+        <div class="setup-info">
+          <span class="setup-chip">Kickstart</span>
+          <div>
+            <h2>Finish your Ledgerly setup</h2>
+            <p>Share shop basics so Insights Studio reflects the real story.</p>
+          </div>
+        </div>
+        <div class="setup-actions">
+          <div class="setup-meter" role="presentation">
+            <span class="meter-value" data-progress-total>45%</span>
+            <span class="meter-label">complete</span>
+          </div>
+          <button type="button" class="setup-btn" data-modal-target="onboardingModal" data-step-target="profile">Complete setup</button>
+        </div>
+      </section>
+
+      <section class="data-health" aria-label="Data health overview">
+        <ul class="health-list">
+          <li class="health-item">
+            <span class="health-dot"></span>
+            <div class="health-body">
+              <div class="health-row">
+                <h3>Shop profile</h3>
+                <span class="health-status" data-progress-label="profile">In progress</span>
+              </div>
+              <p>GSTIN, bank info, business type.</p>
+              <div class="health-meter" role="progressbar" aria-label="Shop profile completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span class="meter-fill" data-progress-fill="profile"></span>
+              </div>
+            </div>
+            <button type="button" class="link-btn" data-modal-target="onboardingModal" data-step-target="profile">Update</button>
+          </li>
+          <li class="health-item">
+            <span class="health-dot"></span>
+            <div class="health-body">
+              <div class="health-row">
+                <h3>Product catalogue</h3>
+                <span class="health-status" data-progress-label="catalog">Missing</span>
+              </div>
+              <p>Upload price lists or sync from POS.</p>
+              <div class="health-meter" role="progressbar" aria-label="Product catalogue completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span class="meter-fill" data-progress-fill="catalog"></span>
+              </div>
+            </div>
+            <button type="button" class="link-btn" data-modal-target="onboardingModal" data-step-target="catalog">Import</button>
+          </li>
+          <li class="health-item">
+            <span class="health-dot"></span>
+            <div class="health-body">
+              <div class="health-row">
+                <h3>Opening inventory</h3>
+                <span class="health-status" data-progress-label="inventory">Missing</span>
+              </div>
+              <p>Baseline stock levels for Insights Studio.</p>
+              <div class="health-meter" role="progressbar" aria-label="Inventory completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span class="meter-fill" data-progress-fill="inventory"></span>
+              </div>
+            </div>
+            <button type="button" class="link-btn" data-modal-target="onboardingModal" data-step-target="inventory">Add counts</button>
+          </li>
+          <li class="health-item">
+            <span class="health-dot"></span>
+            <div class="health-body">
+              <div class="health-row">
+                <h3>Integrations</h3>
+                <span class="health-status" data-progress-label="integrations">Optional</span>
+              </div>
+              <p>Connect GST portal, bank feeds, or POS.</p>
+              <div class="health-meter" role="progressbar" aria-label="Integrations completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span class="meter-fill" data-progress-fill="integrations"></span>
+              </div>
+            </div>
+            <button type="button" class="link-btn" data-modal-target="onboardingModal" data-step-target="integrations">Connect</button>
+          </li>
+        </ul>
+      </section>
+
+      <section class="pulse-grid">
+        <article class="pulse-card" id="upload-flow">
+          <header>
+            <h2>Upload bill</h2>
+            <span class="tag tag-yellow">Photo capture</span>
+          </header>
+          <p>Snap a bill and Ledgerly turns the paperwork into a GST-ready invoice with zero edits.</p>
+          <ul class="flow-list">
+            <li>Upload bill page</li>
+            <li>Smart scan cleanup</li>
+            <li>Item & tax detection</li>
+            <li>Invoice generated</li>
+            <li>Ledger updated</li>
+          </ul>
+          <button type="button" class="action-btn" data-modal-target="uploadModal">Launch upload workspace</button>
+        </article>
+
+        <article class="pulse-card" id="voice-flow">
+          <header>
+            <h2>Voice entry</h2>
+            <span class="tag tag-pink">New notes</span>
+          </header>
+          <p>Record quick Hinglish updates and we turn them into polished ledger entries automatically.</p>
+          <ul class="flow-list">
+            <li>Voice entry page</li>
+            <li>Auto transcription</li>
+            <li>Smart categorisation</li>
+            <li>Invoice generated</li>
+            <li>Ledger updated</li>
+          </ul>
+          <button type="button" class="action-btn" data-modal-target="voiceModal">Open voice entry</button>
+        </article>
+
+        <article class="pulse-card" id="ledger">
+          <header>
+            <h2>Ledger snapshot</h2>
+            <span class="tag tag-green">₹1,82,940</span>
+          </header>
+          <p>Track income vs expenses, reconcile GST and see anomalies in minutes.</p>
+          <ul class="stat-grid">
+            <li><span class="stat-label">Invoices pending</span><span class="stat-value">6</span></li>
+            <li><span class="stat-label">Expenses today</span><span class="stat-value">₹12,450</span></li>
+            <li><span class="stat-label">GST ready</span><span class="stat-value">92%</span></li>
+          </ul>
+          <button type="button" class="action-btn" data-modal-target="ledgerModal">View live ledger</button>
+        </article>
+
+        <article class="pulse-card" id="chat-flow">
+          <header>
+            <h2>Ask Ledgerly</h2>
+            <span class="tag tag-blue">BI chat</span>
+          </header>
+          <p>Type questions like “Kal ka galla?” and get instant, chart-ready answers.</p>
+          <ul class="flow-list">
+            <li>BI chat interface</li>
+            <li>Insight engine</li>
+            <li>Data crunch</li>
+            <li>Ledger history</li>
+            <li>Answer shown</li>
+          </ul>
+          <button type="button" class="action-btn" data-modal-target="chatModal">Ask a question</button>
+        </article>
+      </section>
+
+      <section class="billing" id="billing-overview" aria-labelledby="billing-title">
+        <header class="billing-header">
+          <div>
+            <h2 id="billing-title">Billing snapshot</h2>
+            <p class="section-sub">Track receivables, payables, and reconciliation steps in one glance.</p>
+          </div>
+          <div class="billing-actions">
+            <button type="button" class="billing-btn" data-range="week" aria-pressed="true">This week</button>
+            <button type="button" class="billing-btn" data-range="month">This month</button>
+          </div>
+        </header>
+
+        <div class="billing-grid">
+          <div class="billing-summary">
+            <div class="billing-ring" role="img" aria-label="Collections 58 percent">
+              <div class="billing-total">₹23.4L</div>
+              <span class="billing-label">Collections</span>
+              <ul class="billing-ring-legend">
+                <li><span class="dot dot-collect"></span>Cleared</li>
+                <li><span class="dot dot-due"></span>Due soon</li>
+                <li><span class="dot dot-overdue"></span>Overdue</li>
+              </ul>
+            </div>
+            <div class="billing-status">
+              <div class="billing-chip">12 invoices awaiting approval</div>
+              <div class="billing-chip">Last payout: ₹5.6L · 2h ago</div>
+              <div class="billing-chip billing-chip--alert">3 GST filings due by Friday</div>
+            </div>
+          </div>
+
+          <div class="billing-metrics">
+            <article class="billing-card">
+              <h3>Payments received</h3>
+              <p class="billing-amount">₹14,56,800</p>
+              <span class="billing-trend billing-trend--up">+12%</span>
+              <p class="billing-note">Across 188 invoices this period</p>
+            </article>
+            <article class="billing-card">
+              <h3>Payments requested</h3>
+              <p class="billing-amount">₹6,23,400</p>
+              <span class="billing-trend billing-trend--steady">0%</span>
+              <p class="billing-note">Awaiting UPI confirmation</p>
+            </article>
+            <article class="billing-card">
+              <h3>Outstanding</h3>
+              <p class="billing-amount">₹3,78,600</p>
+              <span class="billing-trend billing-trend--down">-5%</span>
+              <p class="billing-note">Auto reminders on</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="billing-table" role="region" aria-live="polite">
+          <div class="table-header">
+            <h3>Latest transactions</h3>
+            <div class="table-filters">
+              <button type="button" class="filter-chip is-active" data-status="all">All</button>
+              <button type="button" class="filter-chip" data-status="paid">Paid</button>
+              <button type="button" class="filter-chip" data-status="due">Due</button>
+              <button type="button" class="filter-chip" data-status="overdue">Overdue</button>
+            </div>
+          </div>
+          <div class="table-scroll" tabindex="0">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col">Amount</th>
+                  <th scope="col">Channel</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-status="paid">
+                  <td>INV-4581</td>
+                  <td>Samantha Traders</td>
+                  <td>₹56,856</td>
+                  <td>UPI</td>
+                  <td><span class="status-pill status-pill--paid">Paid</span></td>
+                  <td>Today</td>
+                </tr>
+                <tr data-status="due">
+                  <td>INV-4590</td>
+                  <td>Bright Kirana</td>
+                  <td>₹45,640</td>
+                  <td>Bank transfer</td>
+                  <td><span class="status-pill status-pill--due">Due soon</span></td>
+                  <td>In 2 days</td>
+                </tr>
+                <tr data-status="overdue">
+                  <td>INV-4586</td>
+                  <td>Ravi Enterprises</td>
+                  <td>₹23,780</td>
+                  <td>Cash</td>
+                  <td><span class="status-pill status-pill--overdue">Overdue</span></td>
+                  <td>3 days</td>
+                </tr>
+                <tr data-status="paid">
+                  <td>INV-4587</td>
+                  <td>Ananya Stores</td>
+                  <td>₹12,400</td>
+                  <td>UPI</td>
+                  <td><span class="status-pill status-pill--paid">Paid</span></td>
+                  <td>Yesterday</td>
+                </tr>
+                <tr data-status="due">
+                  <td>INV-4588</td>
+                  <td>Manoj Dairy</td>
+                  <td>₹34,860</td>
+                  <td>Credit</td>
+                  <td><span class="status-pill status-pill--due">Due soon</span></td>
+                  <td>Tomorrow</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="flow-lanes" id="automations">
+        <div class="lane">
+          <h3>Workflow overview</h3>
+          <div class="lane-grid">
+            <div class="lane-column">
+              <h4>Capture</h4>
+              <ul>
+                <li>Upload bill</li>
+                <li>Record voice</li>
+                <li>View ledger</li>
+                <li>Shop settings</li>
+              </ul>
+            </div>
+            <div class="lane-column">
+              <h4>Processing</h4>
+              <ul>
+                <li>Smart scan cleanup</li>
+                <li>Voice transcription</li>
+                <li>Item & tax detection</li>
+                <li>Insight engine</li>
+              </ul>
+            </div>
+            <div class="lane-column">
+              <h4>Outputs</h4>
+              <ul>
+                <li>Invoice generated</li>
+                <li>Ledger updated</li>
+                <li>Insight delivered</li>
+                <li>Answer shown to owner</li>
+              </ul>
+            </div>
+            <div class="lane-column">
+              <h4>Source of truth</h4>
+              <ul>
+                <li>Ledger history</li>
+                <li>Ledger page</li>
+                <li>BI chat interface</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="insights" aria-label="Today’s highlights">
+        <div class="insight-card">
+          <h3>Tasks due</h3>
+          <ul>
+            <li><span>Approve 3 OCR invoices</span><span class="pill">Due 11:00</span></li>
+            <li><span>Listen to new voice note</span><span class="pill">Due noon</span></li>
+            <li><span>Respond to BI chat follow-up</span><span class="pill">Due 15:30</span></li>
+          </ul>
+        </div>
+        <div class="insight-card">
+          <h3>Database activity</h3>
+          <ul>
+            <li><strong>09:12</strong> Ledger updated after voice entry</li>
+            <li><strong>09:55</strong> Invoice #4581 pushed to GST queue</li>
+            <li><strong>10:10</strong> Answer shared with owner Top selling SKU</li>
+          </ul>
+        </div>
+        <div class="insight-card">
+          <h3>Shop settings</h3>
+          <p>GSTIN verified. Auto-reply to CA is ON. Reminder emails configured for Mondays.</p>
+          <a href="#settings" class="link">Open settings →</a>
+        </div>
+      </section>
+
+      <section class="ledger-panels" id="settings">
+        <div class="panel large" aria-labelledby="ledger-breakdown">
+          <h3 id="ledger-breakdown">Income vs Expense</h3>
+          <div class="bars">
+            <div class="bar bar-income" style="--pct: 72%">
+              <span class="bar-label">Income ₹3.2L</span>
+            </div>
+            <div class="bar bar-expense" style="--pct: 48%">
+              <span class="bar-label">Expense ₹2.1L</span>
+            </div>
+            <div class="bar bar-profit" style="--pct: 24%">
+              <span class="bar-label">Net ₹1.1L</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Ledger alerts</h3>
+          <ul class="alert-list">
+            <li class="alert">
+              <span class="dot dot-yellow"></span>
+              <div>
+                <p class="alert-title">Low stock: premium atta</p>
+                <p class="alert-copy">Voice entry flagged stock below reorder point.</p>
+              </div>
+            </li>
+            <li class="alert">
+              <span class="dot dot-pink"></span>
+              <div>
+                <p class="alert-title">GST anomaly</p>
+                <p class="alert-copy">Invoice #4576 missing HSN code. Review before filing.</p>
+              </div>
+            </li>
+            <li class="alert">
+              <span class="dot dot-blue"></span>
+              <div>
+                <p class="alert-title">SQL chat answered</p>
+                <p class="alert-copy">Question Sabse zyada margin wala item? logged.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="schedule" id="schedule" aria-labelledby="schedule-title">
+        <header class="schedule-header">
+          <div>
+            <h2 id="schedule-title">Week at a glance</h2>
+            <p class="section-sub">Coordinate captures, audits, and CA reviews without leaving Ledgerly.</p>
+          </div>
+          <div class="schedule-filters" role="group" aria-label="Schedule filters">
+            <button type="button" class="filter-chip is-active" data-schedule-filter="all">All</button>
+            <button type="button" class="filter-chip" data-schedule-filter="capture">Capture</button>
+            <button type="button" class="filter-chip" data-schedule-filter="compliance">Compliance</button>
+            <button type="button" class="filter-chip" data-schedule-filter="meeting">Meetings</button>
+          </div>
+        </header>
+
+        <div class="schedule-grid" role="list">
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Mon</span>
+              <span class="date">12 Feb</span>
+            </header>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Upload kirana invoices</p>
+              <p class="schedule-meta">09:00 · Staff app</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">Weekly owner sync</p>
+              <p class="schedule-meta">12:30 · Video</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Tue</span>
+              <span class="date">13 Feb</span>
+            </header>
+            <div class="schedule-card long" data-kind="compliance">
+              <p class="schedule-title">GST filing review</p>
+              <p class="schedule-meta">10:00 · Accountant desk</p>
+              <span class="schedule-badge badge-compliance">Compliance</span>
+            </div>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Voice entry follow-up</p>
+              <p class="schedule-meta">16:00 · WhatsApp bot</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Wed</span>
+              <span class="date">14 Feb</span>
+            </header>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">Supplier negotiation</p>
+              <p class="schedule-meta">11:30 · Store</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Expense audit</p>
+              <p class="schedule-meta">14:00 · Ledgerly desktop</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Thu</span>
+              <span class="date">15 Feb</span>
+            </header>
+            <div class="schedule-card long" data-kind="compliance">
+              <p class="schedule-title">Inventory reconciliation</p>
+              <p class="schedule-meta">09:30 · Warehouse</p>
+              <span class="schedule-badge badge-compliance">Compliance</span>
+            </div>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">CA office drop</p>
+              <p class="schedule-meta">17:00 · Shivajinagar</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+          </article>
+
+          <article class="schedule-column" role="listitem">
+            <header>
+              <span class="day">Fri</span>
+              <span class="date">16 Feb</span>
+            </header>
+            <div class="schedule-card" data-kind="capture">
+              <p class="schedule-title">Cash drawer tally</p>
+              <p class="schedule-meta">19:00 · Counter</p>
+              <span class="schedule-badge">Capture</span>
+            </div>
+            <div class="schedule-card" data-kind="meeting">
+              <p class="schedule-title">Team retro</p>
+              <p class="schedule-meta">20:30 · Café</p>
+              <span class="schedule-badge badge-meeting">Meeting</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <div class="modal" id="onboardingModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="onboardingTitle">
+        <div class="modal-card modal-card--wide">
+          <header class="modal-header">
+            <div>
+              <h2 id="onboardingTitle">Ledgerly onboarding</h2>
+              <p class="modal-sub">Share a few details so we can personalise Insights Studio for your shop.</p>
+            </div>
+            <button type="button" class="modal-close" data-modal-close>
+              <span class="sr-only">Close</span>
+              ×
+            </button>
+          </header>
+          <div class="modal-body wizard-body">
+            <aside class="wizard-nav" role="tablist" aria-orientation="vertical">
+              <button type="button" class="wizard-step is-active" data-step="profile" role="tab" aria-controls="step-profile" aria-selected="true">1. Shop profile</button>
+              <button type="button" class="wizard-step" data-step="catalog" role="tab" aria-controls="step-catalog" aria-selected="false">2. Product catalogue</button>
+              <button type="button" class="wizard-step" data-step="inventory" role="tab" aria-controls="step-inventory" aria-selected="false">3. Opening inventory</button>
+              <button type="button" class="wizard-step" data-step="integrations" role="tab" aria-controls="step-integrations" aria-selected="false">4. Integrations</button>
+            </aside>
+            <section class="wizard-panel" id="step-profile" role="tabpanel">
+              <h3>Shop profile</h3>
+              <p>Tell us about your business so invoices and reports carry the right brand.</p>
+              <form class="wizard-form">
+                <label>
+                  Business name
+                  <input type="text" placeholder="Shree Ganesh Kirana" autocomplete="organization" />
+                </label>
+                <label>
+                  GSTIN
+                  <input type="text" placeholder="27ABCDE1234F1Z5" autocomplete="off" />
+                </label>
+                <label>
+                  Business type
+                  <select>
+                    <option>Retail store</option>
+                    <option>Wholesale</option>
+                    <option>Services</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <div class="wizard-actions">
+                  <button type="button" class="modal-primary" data-complete-step="profile" data-toast="Shop profile saved." data-intent="success">Save & continue</button>
+                </div>
+              </form>
+            </section>
+            <section class="wizard-panel is-hidden" id="step-catalog" role="tabpanel" aria-hidden="true">
+              <h3>Product catalogue</h3>
+              <p>Upload a price list so Ledgerly can spot fast movers and margins.</p>
+              <div class="upload-drop">
+                <p><strong>Drag & drop</strong> CSV / XLSX / PDF price lists</p>
+                <button type="button" class="ghost-btn" data-toast="Sample template downloaded." data-intent="info">Download template</button>
+              </div>
+              <div class="wizard-actions">
+                <button type="button" class="modal-secondary" data-nav-step="profile">« Back</button>
+                <button type="button" class="modal-primary" data-complete-step="catalog" data-toast="Catalogue imported. 188 SKUs added." data-intent="success">Mark as done</button>
+              </div>
+            </section>
+            <section class="wizard-panel is-hidden" id="step-inventory" role="tabpanel" aria-hidden="true">
+              <h3>Opening inventory</h3>
+              <p>Set the starting stock so our alerts know when to ping you.</p>
+              <form class="wizard-form">
+                <label>
+                  Counting method
+                  <select>
+                    <option>Manual entry</option>
+                    <option>Voice walk</option>
+                    <option>POS sync</option>
+                  </select>
+                </label>
+                <label>
+                  Expected completion date
+                  <input type="date" />
+                </label>
+                <label>
+                  Notes for team
+                  <textarea rows="3" placeholder="Start with grains aisle. Use the voice app if short on time."></textarea>
+                </label>
+                <div class="wizard-actions">
+                  <button type="button" class="modal-secondary" data-nav-step="catalog">« Back</button>
+                  <button type="button" class="modal-primary" data-complete-step="inventory" data-intent="success" data-toast="Inventory baseline scheduled.">Save checkpoint</button>
+                </div>
+              </form>
+            </section>
+            <section class="wizard-panel is-hidden" id="step-integrations" role="tabpanel" aria-hidden="true">
+              <h3>Integrations</h3>
+              <p>Connect optional services to automate imports and reconciliation.</p>
+              <ul class="integration-list">
+                <li>
+                  <div>
+                    <strong>GST portal</strong>
+                    <span>Auto-download monthly filings.</span>
+                  </div>
+                  <button type="button" class="ghost-btn" data-toast="GST portal connected successfully." data-intent="success">Connect</button>
+                </li>
+                <li>
+                  <div>
+                    <strong>Bank feeds</strong>
+                    <span>Match payments with invoices automatically.</span>
+                  </div>
+                  <button type="button" class="ghost-btn" data-toast="Bank feed pending approval." data-intent="info">Request link</button>
+                </li>
+                <li>
+                  <div>
+                    <strong>POS / Billing software</strong>
+                    <span>Sync daily sales & refunds.</span>
+                  </div>
+                  <button type="button" class="ghost-btn" data-toast="POS sync activated." data-intent="success">Connect</button>
+                </li>
+              </ul>
+              <div class="wizard-actions">
+                <button type="button" class="modal-secondary" data-nav-step="inventory">« Back</button>
+                <button type="button" class="modal-primary" data-complete-step="integrations" data-intent="success" data-toast="Setup complete! Insights are now personalised.">Finish</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" id="uploadModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="uploadModalTitle">
+        <div class="modal-card">
+          <header class="modal-header">
+            <h2 id="uploadModalTitle">Upload bill workspace</h2>
+            <button type="button" class="modal-close" data-modal-close>
+              <span class="sr-only">Close</span>
+              ×
+            </button>
+          </header>
+          <div class="modal-body">
+            <div class="modal-pane">
+              <div class="device-mock">
+                <!-- Upload Drop Zone -->
+                <div class="upload-drop-zone" id="uploadDropZone">
+                  <input type="file" id="billFileInput" accept="image/*,.pdf" style="display: none;">
+                  <div class="upload-icon">📷</div>
+                  <p class="upload-label">Click to upload or drag image here</p>
+                  <p class="upload-hint">Supports JPG, PNG, WebP (max 10MB)</p>
+                </div>
+                <!-- Processing State -->
+                <div class="upload-processing" id="uploadProcessing" style="display: none;">
+                  <div class="processing-spinner"></div>
+                  <p>Uploading & analyzing bill...</p>
+                </div>
+                <!-- Result State -->
+                <div class="upload-result" id="uploadResult" style="display: none;">
+                  <div class="result-success">✅</div>
+                  <p class="result-title">Bill processed!</p>
+                  <div class="result-amount" id="resultAmount"></div>
+                  <div class="result-confidence" id="resultConfidence" style="display: none;"></div>
+                  <a class="result-link" id="resultViewLink" href="#" target="_blank" rel="noopener">View uploaded bill</a>
+                  <button type="button" class="upload-another-btn" id="uploadAnotherBtn">Upload another</button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-pane">
+              <div class="modal-steps">
+                <div class="step">
+                  <span class="step-index">01</span>
+                  <div>
+                    <h3>Smart scan understanding</h3>
+                    <p>Snaps are cleaned up, handwriting is read, and totals are spotted in seconds.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">02</span>
+                  <div>
+                    <h3>Item spotting</h3>
+                    <p>Amounts, GST %, HSN codes and counterparty are arranged into an invoice-ready layout.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">03</span>
+                  <div>
+                    <h3>Ledger sync</h3>
+                    <p>Auto-posts to income ledger, schedules GST filing task, updates cashflow chart.</p>
+                  </div>
+                </div>
+              </div>
+              <!-- OCR Text Preview -->
+              <div class="ocr-preview" id="ocrPreview" style="display: none;">
+                <h4>Extracted Text</h4>
+                <div class="ocr-text-box" id="ocrTextBox"></div>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="modal-secondary" data-modal-close>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" id="voiceModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="voiceModalTitle">
+        <div class="modal-card">
+          <header class="modal-header">
+            <h2 id="voiceModalTitle">Voice entry capture</h2>
+            <button type="button" class="modal-close" data-modal-close>
+              <span class="sr-only">Close</span>
+              ×
+            </button>
+          </header>
+          <div class="modal-body">
+            <div class="modal-pane">
+              <div class="voice-console">
+                <div class="voice-wave">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <p class="voice-transcript">“5 kilo chawal 500 rupaye mein becha”</p>
+                <div class="voice-controls">
+                  <button type="button" class="voice-btn" data-toast="Recording saved to queue." data-intent="info">Record</button>
+                  <button type="button" class="voice-btn" data-toast="Ledger created a draft invoice." data-intent="success">Process</button>
+                </div>
+              </div>
+            </div>
+            <div class="modal-pane">
+              <div class="modal-steps">
+                <div class="step">
+                  <span class="step-index">01</span>
+                  <div>
+                    <h3>Speech-to-text</h3>
+                    <p>Understands Hinglish &amp; code-mixed inputs while automatically applying units (kg, pcs).</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">02</span>
+                  <div>
+                    <h3>Entity mapping</h3>
+                    <p>Matches items to your catalogue, keeps pricing consistent, and flags anything unusual.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">03</span>
+                  <div>
+                    <h3>Instant insights</h3>
+                    <p>Refreshes dashboard KPIs and schedules any needed follow-ups automatically.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="modal-primary" data-toast="Voice note processed with ₹500 revenue." data-intent="success">Simulate entry</button>
+                <button type="button" class="modal-secondary" data-modal-close>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" id="ledgerModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="ledgerModalTitle">
+        <div class="modal-card">
+          <header class="modal-header">
+            <h2 id="ledgerModalTitle">Ledger workspace</h2>
+            <button type="button" class="modal-close" data-modal-close>
+              <span class="sr-only">Close</span>
+              ×
+            </button>
+          </header>
+          <div class="modal-body">
+            <div class="modal-pane">
+              <div class="ledger-table" role="table">
+                <div class="ledger-row ledger-row--head">
+                  <span>Date</span>
+                  <span>Entry</span>
+                  <span>Debit</span>
+                  <span>Credit</span>
+                  <span>Balance</span>
+                </div>
+                <div class="ledger-row">
+                  <span>15 Feb</span>
+                  <span>Invoice #4587 · Kirana sale</span>
+                  <span></span>
+                  <span>₹12,400</span>
+                  <span>₹3,42,890</span>
+                </div>
+                <div class="ledger-row">
+                  <span>15 Feb</span>
+                  <span>Cash purchase · Packaging</span>
+                  <span>₹2,150</span>
+                  <span></span>
+                  <span>₹3,40,740</span>
+                </div>
+                <div class="ledger-row">
+                  <span>14 Feb</span>
+                  <span>GST payout · Jan</span>
+                  <span>₹18,560</span>
+                  <span></span>
+                  <span>₹3,22,180</span>
+                </div>
+              </div>
+            </div>
+            <div class="modal-pane">
+              <div class="modal-steps">
+                <div class="step">
+                  <span class="step-index">Smart filters</span>
+                  <div>
+                    <p>Switch between cash, accrual, GST-ready and category slices. Each entry links to its source capture.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">Audit trail</span>
+                  <div>
+                    <p>Every edit is versioned. Download CSV or share a read-only link with your CA.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">Anomaly guard</span>
+                  <div>
+                    <p>Detections like GST mismatch or duplicate purchase surface as friendly alerts.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="modal-primary" data-toast="Ledger exported and sent to your CA." data-intent="success">Export ledger</button>
+                <button type="button" class="modal-secondary" data-modal-close>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal" id="chatModal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="chatModalTitle">
+        <div class="modal-card">
+          <header class="modal-header">
+            <h2 id="chatModalTitle">Ask Ledgerly AI</h2>
+            <button type="button" class="modal-close" data-modal-close>
+              <span class="sr-only">Close</span>
+              ×
+            </button>
+          </header>
+          <div class="modal-body">
+            <div class="modal-pane">
+              <div class="chat-window">
+                <div class="chat-bubble chat-bubble--user">Is hafte ka profit kitna hai?</div>
+                <div class="chat-bubble chat-bubble--ai">
+                  This week you generated <strong>₹1,12,450</strong> in revenue, expenses were <strong>₹78,300</strong>. Net profit totals <strong>₹34,150</strong>, up 8% vs last week.
+                </div>
+                <div class="chat-bubble chat-bubble--user">Sabse zyada margin wala item?</div>
+                <div class="chat-bubble chat-bubble--ai">
+                  <strong>Premium basmati (42%)</strong> drives the highest margin. Recommend restocking before Friday based on run-rate.
+                </div>
+              </div>
+            </div>
+            <div class="modal-pane">
+              <div class="modal-steps">
+                <div class="step">
+                  <span class="step-index">Natural language</span>
+                  <div>
+                    <p>Understands Hinglish, Marathi, Tamil, plus business shorthand like “galla”.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">Trusted answers</span>
+                  <div>
+                    <p>Every response is double-checked against your books before being shared.</p>
+                  </div>
+                </div>
+                <div class="step">
+                  <span class="step-index">Actionable</span>
+                  <div>
+                    <p>Produces summaries, charts, and can trigger workflows like re-order reminders.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-actions">
+                <button type="button" class="modal-primary" data-toast="AI drafted an insights email for you." data-intent="info">Email me this insight</button>
+                <button type="button" class="modal-secondary" data-modal-close>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const today = new Date();
+    const dateLabel = today.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    document.getElementById('todayDate').textContent = dateLabel;
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' });
+        window.location.href = '/';
+      });
+    }
+
+    const navLinks = Array.from(document.querySelectorAll('.side-nav .nav-link'));
+    const activate = (link) => {
+      navLinks.forEach((item) => item.classList.remove('is-active'));
+      if (link) {
+        link.classList.add('is-active');
+      }
+    };
+
+    navLinks.forEach((link) => {
+      const targetSelector = link.getAttribute('href');
+      if (!targetSelector || !targetSelector.startsWith('#')) {
+        return;
+      }
+
+      const target = document.querySelector(targetSelector);
+      if (!target) {
+        return;
+      }
+
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const offset = 32;
+        const y = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+        activate(link);
+      });
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const current = navLinks.find((link) => link.getAttribute('href') === `#${entry.target.id}`);
+        if (current) {
+          activate(current);
+        }
+      });
+    }, {
+      threshold: 0.4,
+      rootMargin: '-20% 0px -40% 0px'
+    });
+
+    navLinks.forEach((link) => {
+      const selector = link.getAttribute('href');
+      if (selector && selector.startsWith('#')) {
+        const target = document.querySelector(selector);
+        if (target) {
+          observer.observe(target);
+        }
+      }
+    });
+
+    const billingFilters = document.querySelectorAll('.billing .filter-chip');
+    const billingRows = document.querySelectorAll('.billing-table tbody tr');
+    billingFilters.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        billingFilters.forEach((item) => item.classList.remove('is-active'));
+        chip.classList.add('is-active');
+        const status = chip.dataset.status;
+        billingRows.forEach((row) => {
+          if (status === 'all' || row.dataset.status === status) {
+            row.removeAttribute('data-muted');
+          } else {
+            row.setAttribute('data-muted', 'true');
+          }
+        });
+      });
+    });
+
+    const scheduleFilters = document.querySelectorAll('[data-schedule-filter]');
+    const scheduleCards = document.querySelectorAll('.schedule-card');
+    scheduleFilters.forEach((toggle) => {
+      toggle.addEventListener('click', () => {
+        scheduleFilters.forEach((btn) => btn.classList.remove('is-active'));
+        toggle.classList.add('is-active');
+        const kind = toggle.dataset.scheduleFilter;
+        scheduleCards.forEach((card) => {
+          if (kind === 'all' || card.dataset.kind === kind) {
+            card.classList.remove('is-muted');
+          } else {
+            card.classList.add('is-muted');
+          }
+        });
+      });
+    });
+
+    const modals = Array.from(document.querySelectorAll('.modal'));
+    const modalTriggers = document.querySelectorAll('[data-modal-target]');
+    const focusableSelector = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+    let lastActiveElement = null;
+
+    function openModal(modal) {
+      if (!modal || modal.getAttribute('aria-hidden') === 'false') return;
+      lastActiveElement = document.activeElement;
+      modal.setAttribute('aria-hidden', 'false');
+      modal.classList.add('is-visible');
+      const focusable = modal.querySelector(focusableSelector);
+      if (focusable) focusable.focus();
+      document.body.classList.add('modal-open');
+    }
+
+    function closeModal(modal) {
+      if (!modal || modal.getAttribute('aria-hidden') === 'true') return;
+      modal.setAttribute('aria-hidden', 'true');
+      modal.classList.remove('is-visible');
+      document.body.classList.remove('modal-open');
+      if (lastActiveElement) {
+        lastActiveElement.focus({ preventScroll: true });
+      }
+    }
+
+    modalTriggers.forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        const id = trigger.dataset.modalTarget;
+        const modal = document.getElementById(id);
+        openModal(modal);
+      });
+    });
+
+    modals.forEach((modal) => {
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+          closeModal(modal);
+        }
+      });
+      modal.querySelectorAll('[data-modal-close]').forEach((btn) => {
+        btn.addEventListener('click', () => closeModal(modal));
+      });
+      modal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeModal(modal);
+        }
+
+        if (event.key === 'Tab') {
+          const focusableEls = Array.from(modal.querySelectorAll(focusableSelector)).filter((el) => !el.hasAttribute('disabled'));
+          const first = focusableEls[0];
+          const last = focusableEls[focusableEls.length - 1];
+          if (!focusableEls.length) return;
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+      });
+    });
+  </script>
+  <script src="/script/dashboard.js"></script>
+  <script src="/script/bill-upload.js"></script>
+</body>
+</html>

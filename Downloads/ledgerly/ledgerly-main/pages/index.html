@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ledgerly - Smart Accounting Solutions</title>
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <img src="/uploads/logo.svg" alt="Ledgerly Logo" class="logo-img">
+                <span>Ledgerly</span>
+            </div>
+            <nav class="nav">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#how" class="nav-link">How it works</a>
+                <a href="#features" class="nav-link">Product</a>
+                <a href="#pricing" class="nav-link">Plans</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+            <div class="nav-cta">
+                <a href="login.html" class="btn btn-text" id="authLink">Sign in</a>
+                <a href="#cta" class="btn btn-primary" data-toast="Free trials open soon—leave your details below." data-intent="info">Start free trial</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero" id="home">
+            <div class="container">
+                <div class="hero-content">
+                    <span class="eyebrow">Meet Ledgerly</span>
+                    <h1>Turn Bills Into Business Intelligence</h1>
+                    <p class="subtitle">Ledgerly transforms messy bills and voice notes into smart insights. Snap, speak, or scan—watch your business intelligence grow in real-time.</p>
+                    <div class="cta-buttons">
+                        <a href="#" class="btn btn-primary btn-large" data-toast="We'll reach out with early access shortly." data-intent="success">Request early access</a>
+                        <a href="#showcase" class="btn btn-outline btn-large" data-toast="Tour loading... enjoy the marquee below." data-intent="info">Watch 2‑min tour</a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-animation" id="animation">
+                        <div class="hero-particles">
+                            <div class="particle particle-1">📱</div>
+                            <div class="particle particle-2">🗣️</div>
+                            <div class="particle particle-3">📊</div>
+                            <div class="particle particle-4">💹</div>
+                            <div class="particle particle-5">🏪</div>
+                            <div class="particle particle-6">📈</div>
+                        </div>
+                        <div class="hero-waves">
+                            <div class="wave wave-1"></div>
+                            <div class="wave wave-2"></div>
+                            <div class="wave wave-3"></div>
+                        </div>
+                        <div class="hero-orbit">
+                            <div class="orbit-center">💰</div>
+                            <div class="orbit-item orbit-1">🧾</div>
+                            <div class="orbit-item orbit-2">📱</div>
+                            <div class="orbit-item orbit-3">📊</div>
+                        </div>
+                    </div>
+                    <div class="hero-chip" data-floating>
+                        <span class="chip-title">Voice note</span>
+                        <span class="chip-value">₹7,820</span>
+                        <span class="chip-meta">Groceries · Today 08:45</span>
+                    </div>
+                    <div class="hero-chip hero-chip--outline" data-floating>
+                        <span class="chip-title">GST ready</span>
+                        <span class="chip-value">92%</span>
+                        <span class="chip-meta">Auto filed this week</span>
+                    </div>
+                    <div class="hero-card">
+                        <p class="hero-card-title">“Kal ka total galla kitna tha?”</p>
+                        <p class="hero-card-body">Ledgerly: <strong>₹1,82,940</strong> across 124 invoices. Inventory spend up 12% WoW.</p>
+                    </div>
+                </div>
+            </div>
+            <button class="scroll-indicator" onclick="document.getElementById('how').scrollIntoView({ behavior: 'smooth' })">
+                Explore the workflow ↓
+            </button>
+        </section>
+
+        <section class="marquee" id="showcase">
+            <div class="marquee-track">
+                <span>Trusted by smart kirana stores</span>
+                <span>Automated GST filing</span>
+                <span>Voice-to-ledger in seconds</span>
+                <span>Insights in Hinglish</span>
+                <span>Trusted by smart kirana stores</span>
+            </div>
+        </section>
+
+        <section class="how" id="how">
+            <div class="container">
+                <div class="how-copy">
+                    <span class="eyebrow">Workflow</span>
+                    <h2>From real-world chaos to compliant intelligence</h2>
+                    <p class="section-subtitle">Ledgerly's AI agents process bills, audio, and vernacular queries to keep ledgers pristine and owners informed.</p>
+                </div>
+                <div class="how-grid">
+                    <article class="how-step">
+                        <div class="step-badge">1</div>
+                        <h3>Capture revenue without typing</h3>
+                        <p>Snap a handwritten bill or record sales like “5 kilo chawal 500 rupaye mein becha.” Ledgerly auto-detects items, amount, and GST slabs.</p>
+                    </article>
+                    <article class="how-step">
+                        <div class="step-badge">2</div>
+                        <h3>AI structuring &amp; compliance</h3>
+                        <p>Vision + Speech + Ledger models produce GST-compliant invoices, reconcile ledgers, and prep filings instantly.</p>
+                    </article>
+                    <article class="how-step">
+                        <div class="step-badge">3</div>
+                        <h3>Query data in Hinglish</h3>
+                        <p>Ask “Is week ka profit?” or “Sabse zyada margin wala item?” Ledgerly executes safe SQL on your private database and answers in plain language.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <div class="container">
+                <span class="eyebrow">Product</span>
+                <h2>Everything your finance stack was missing</h2>
+                <p class="section-subtitle">Ledgerly stitches together capture, compliance, analytics, and collaboration into one delightful flow.</p>
+                <div class="feature-grid">
+                    <article class="feature-card">
+                        <div class="feature-icon">🎙️</div>
+                        <div class="feature-animation">
+                            <div class="sound-waves">
+                                <div class="wave wave-sound wave-1"></div>
+                                <div class="wave wave-sound wave-2"></div>
+                                <div class="wave wave-sound wave-3"></div>
+                            </div>
+                        </div>
+                        <h3>Multilingual Voice Ledger</h3>
+                        <p>Record in Hindi, Hinglish, Tamil, or English. Auto-tag categories, GST codes, and update books in seconds.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">🧾</div>
+                        <div class="feature-animation">
+                            <div class="document-scan">
+                                <div class="scan-line"></div>
+                                <div class="scan-dots">
+                                    <div class="dot dot-1"></div>
+                                    <div class="dot dot-2"></div>
+                                    <div class="dot dot-3"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <h3>Photo-to-GST Invoicing</h3>
+                        <p>Capture bill images, run OCR with Indian tax intelligence, and file invoices ready for GST portals.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">📈</div>
+                        <div class="feature-animation">
+                            <div class="chart-bars">
+                                <div class="bar bar-1"></div>
+                                <div class="bar bar-2"></div>
+                                <div class="bar bar-3"></div>
+                                <div class="bar bar-4"></div>
+                            </div>
+                        </div>
+                        <h3>Vernacular BI Chat</h3>
+                        <p>Ask Ledgerly anything. Get SQL-grade answers, charts, and recommendations tailored to your books.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">🤝</div>
+                        <h3>Accountant Collaboration</h3>
+                        <p>Invite CAs with role-based access, leave notes on entries, and export filings with audit trails.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">🔐</div>
+                        <h3>Bank-grade Security</h3>
+                        <p>Private VPC deployment, AES-256 encryption, and compliance aligned with RBI &amp; GSTN standards.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon">⚙️</div>
+                        <h3>Stack Integrations</h3>
+                        <p>Connect Tally, Zoho, Razorpay, and custom ERPs with webhooks and APIs tailored for MSMEs.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="metrics" id="benefits">
+            <div class="container">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>4x faster</h3>
+                        <p>Month-end closing cycles when Ledgerly automates data entry.</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>98%</h3>
+                        <p>Accuracy across reconciliations with ledger-aware AI.
+                        </p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>24/7</h3>
+                        <p>Support in English &amp; regional languages from finance specialists.</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>₹3.2M</h3>
+                        <p>Average annual savings uncovered via GST optimization.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing" id="pricing">
+            <div class="container">
+                <span class="eyebrow">Plans</span>
+                <h2>Start free, upgrade when you're ready</h2>
+                <div class="pricing-grid">
+                    <article class="pricing-card">
+                        <h3>Starter</h3>
+                        <p class="price">₹1,999<span>/mo</span></p>
+                        <ul>
+                            <li>Photo-to-invoice automation</li>
+                            <li>Voice ledger in 3 languages</li>
+                            <li>2 team members</li>
+                        </ul>
+                        <a href="#cta" class="btn btn-outline" data-toast="Your Starter plan request is noted!" data-intent="success">Choose plan</a>
+                    </article>
+                    <article class="pricing-card popular">
+                        <div class="badge">Most Popular</div>
+                        <h3>Growth</h3>
+                        <p class="price">₹4,999<span>/mo</span></p>
+                        <ul>
+                            <li>Everything in Starter</li>
+                            <li>Unlimited languages &amp; BI chat</li>
+                            <li>Advanced GST workflows</li>
+                            <li>Priority CA support</li>
+                        </ul>
+                        <a href="#cta" class="btn btn-primary" data-toast="Growth trial reserved for you." data-intent="success">Start trial</a>
+                    </article>
+                    <article class="pricing-card">
+                        <h3>Enterprise</h3>
+                        <p class="price">Custom</p>
+                        <ul>
+                            <li>Dedicated success partner</li>
+                            <li>On-prem &amp; private cloud options</li>
+                            <li>Custom approvals &amp; SLAs</li>
+                        </ul>
+                        <a href="#contact" class="btn btn-outline" data-toast="We'll match you with an advisor shortly." data-intent="info">Book a call</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="about" id="about">
+            <div class="container about-grid">
+                <div class="about-content">
+                    <span class="eyebrow">Why Ledgerly</span>
+                    <h2>Finance infrastructure built for India's MSMEs</h2>
+                    <p>From mandis to D2C brands, Ledgerly blends deep finance experience with full-stack AI research to simplify operations.</p>
+                    <ul class="about-list">
+                        <li>Core team led finance at Razorpay, CRED, and GrowthStage startups.</li>
+                        <li>Models fine-tuned on compliant Indian datasets.</li>
+                        <li>Advisory board of CAs, former GST commissioners, and technologists.</li>
+                    </ul>
+                </div>
+                <div class="about-panel">
+                    <div class="about-stat">
+                        <h3>150+</h3>
+                        <p>Banking &amp; ERP integrations ready out-of-the-box.</p>
+                    </div>
+                    <div class="about-stat">
+                        <h3>7 mins</h3>
+                        <p>Average time from intake to GST invoice generation.</p>
+                    </div>
+                    <div class="about-stat">
+                        <h3>Enterprise-ready</h3>
+                        <p>SOC2, ISO 27001, and RBI-compliant infrastructure.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonials" id="testimonials">
+            <div class="container">
+                <span class="eyebrow">Voices</span>
+                <h2>“Ledgerly made finance feel effortless.”</h2>
+                <div class="testimonial-grid">
+                    <blockquote class="testimonial-card">
+                        <p>“Month-end close dropped from 6 days to 12 hours. The BI chat now powers our daily standups.”</p>
+                        <footer>
+                            <span class="name">Mira Patel</span>
+                            <span class="role">CFO, Horizon Labs</span>
+                        </footer>
+                    </blockquote>
+                    <blockquote class="testimonial-card">
+                        <p>“Voice capture in Marathi and Hindi meant our stores onboarded overnight. GST errors vanished.”</p>
+                        <footer>
+                            <span class="name">Aakash S.</span>
+                            <span class="role">Founder, FreshDaily</span>
+                        </footer>
+                    </blockquote>
+                    <blockquote class="testimonial-card">
+                        <p>“The AI respects our guardrails. Every SQL query is auditable, every ledger entry justified.”</p>
+                        <footer>
+                            <span class="name">Isabel Nguyen</span>
+                            <span class="role">Controller, Beacon Partners</span>
+                        </footer>
+                    </blockquote>
+                </div>
+            </div>
+        </section>
+
+        <section class="case-study" id="case-study">
+            <div class="container case-grid">
+                <div class="case-visual">
+                    <div class="case-animation">
+                        <div class="central-hub">
+                            <div class="hub-core">
+                                <div class="currency-symbol">₹</div>
+                            </div>
+                            <div class="hub-rings">
+                                <div class="ring ring-1"></div>
+                                <div class="ring ring-2"></div>
+                                <div class="ring ring-3"></div>
+                            </div>
+                        </div>
+                        <div class="radiating-elements">
+                            <div class="element-container element-1">
+                                <div class="radial-line"></div>
+                                <div class="end-element chart-1">
+                                    <div class="mini-chart">
+                                        <div class="chart-bar bar-a"></div>
+                                        <div class="chart-bar bar-b"></div>
+                                        <div class="chart-bar bar-c"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="element-container element-2">
+                                <div class="radial-line"></div>
+                                <div class="end-element coin-1">
+                                    <div class="coin">
+                                        <div class="coin-face heads">₹</div>
+                                        <div class="coin-face tails">₹</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="element-container element-3">
+                                <div class="radial-line"></div>
+                                <div class="end-element graph-1">
+                                    <div class="line-graph">
+                                        <div class="graph-line"></div>
+                                        <div class="graph-dots">
+                                            <div class="dot"></div>
+                                            <div class="dot"></div>
+                                            <div class="dot"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="element-container element-4">
+                                <div class="radial-line"></div>
+                                <div class="end-element invoice-1">
+                                    <div class="mini-invoice">
+                                        <div class="invoice-header">INV</div>
+                                        <div class="invoice-amount">₹1,234</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="element-container element-5">
+                                <div class="radial-line"></div>
+                                <div class="end-element calculator-1">
+                                    <div class="mini-calculator">
+                                        <div class="calc-display">₹5,678</div>
+                                        <div class="calc-buttons">
+                                            <div class="button"></div>
+                                            <div class="button"></div>
+                                            <div class="button"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="element-container element-6">
+                                <div class="radial-line"></div>
+                                <div class="end-element pie-chart-1">
+                                    <div class="pie-chart">
+                                        <div class="pie-slice slice-1"></div>
+                                        <div class="pie-slice slice-2"></div>
+                                        <div class="pie-slice slice-3"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="floating-currency">
+                            <div class="currency-symbol-small symbol-1">₹</div>
+                            <div class="currency-symbol-small symbol-2">$</div>
+                            <div class="currency-symbol-small symbol-3">€</div>
+                            <div class="currency-symbol-small symbol-4">£</div>
+                        </div>
+                    </div>
+                    <div class="case-gradient"></div>
+                </div>
+                <div class="case-content">
+                    <span class="eyebrow">Case study</span>
+                    <h2>An AI upgrade for BharatFresh’s kirana network</h2>
+                    <ul>
+                        <li>15,000 stores onboarded in 6 weeks.</li>
+                        <li>Automated 94% of manual ledger work.</li>
+                        <li>Unlocked ₹58 crores in working capital via better visibility.</li>
+                    </ul>
+                    <a href="case-study.html" class="btn btn-outline">Read the full story →</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq" id="faq">
+            <div class="container faq-grid">
+                <div class="faq-intro">
+                    <span class="eyebrow">FAQs</span>
+                    <h2>Answers for founders &amp; finance teams</h2>
+                    <p>Need something specific? Drop us a note and we’ll tailor a demo for you.</p>
+                    <a href="#cta" class="btn btn-outline" data-toast="Support team will reach out soon." data-intent="info">Contact support</a>
+                </div>
+                <div class="faq-items">
+                    <details open>
+                        <summary>Can Ledgerly work with my offline accountant?</summary>
+                        <p>Yes. Invite them with secure access. They can review entries, download reports, and suggest edits without breaking your workflow.</p>
+                    </details>
+                    <details>
+                        <summary>Which languages do you understand today?</summary>
+                        <p>English, Hindi, Hinglish, Marathi, Tamil, and Kannada—more on the roadmap.</p>
+                    </details>
+                    <details>
+                        <summary>How safe is my financial data?</summary>
+                        <p>We deploy within dedicated VPCs, use AES-256 encryption, and comply with RBI, SOC2, and local GST regulations.</p>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta" id="cta">
+            <div class="container cta-content">
+                <div>
+                    <h2>Ready to give your business an AI finance team?</h2>
+                    <p>Join the waitlist for early access. Limited founding slots remain.</p>
+                </div>
+                <div class="cta-actions">
+                    <a href="#" class="btn btn-primary btn-large" data-toast="Trial request captured! Our team will email you." data-intent="success">Start free trial</a>
+                    <a href="#contact" class="btn btn-outline btn-large" data-toast="We'll line up a call with sales." data-intent="info">Talk to sales</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="contact" id="contact">
+            <div class="container contact-grid">
+                <div class="contact-info">
+                    <span class="eyebrow">Contact</span>
+                    <h2>Let’s build Ledgerly for your business</h2>
+                    <p>Email <a href="mailto:hello@ledgerly.com">hello@ledgerly.com</a> or call <a href="tel:+18005551234">+1 (800) 555-1234</a>—we respond within one business day.</p>
+                </div>
+                <form class="contact-form">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" placeholder="Alex Johnson">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="alex@company.com">
+                    </div>
+                    <div class="form-group full">
+                        <label for="message">How can we help?</label>
+                        <textarea id="message" name="message" rows="4" placeholder="Tell us about your ledger, locations, and goals..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" data-toast="Thanks! We'll respond within one business day." data-intent="success">Submit</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <img src="/uploads/logo.svg" alt="Ledgerly Logo" class="logo-img">
+                <span>Ledgerly</span>
+            </div>
+            <p>© <span id="year"></span> Ledgerly. Built in India for India.</p>
+        </div>
+    </footer>
+
+    <a href="#" class="scroll-to-top">↑</a>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/ScrollTrigger.min.js"></script>
+    <div class="toast-stack" id="toastStack" aria-live="assertive" aria-atomic="true"></div>
+    <script src="/script/app.js"></script>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
