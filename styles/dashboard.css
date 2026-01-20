@@ -1227,8 +1227,14 @@ tbody tr[data-muted="true"] {
 
 .voice-wave span {
   width: 10px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 999px;
+  height: 12%;
+  transition: height 0.2s ease, background 0.2s ease;
+}
+
+.voice-wave.is-active span {
+  background: rgba(255, 255, 255, 0.7);
   animation: voice-wave 1.4s ease-in-out infinite;
 }
 
@@ -1269,6 +1275,21 @@ tbody tr[data-muted="true"] {
 .voice-btn:hover {
   transform: translateY(-2px);
   background: rgba(31, 26, 54, 0.2);
+}
+
+.voice-btn.recording {
+  background: rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.voice-wave.is-active span {
+  animation-duration: 0.8s;
 }
 
 .ledger-table {

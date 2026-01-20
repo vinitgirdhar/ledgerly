@@ -642,6 +642,204 @@ def create_app() -> Flask:
 
         return jsonify({"ok": True, "bill": dict(row)})
 
+    # -------------------------
+    # Voice Entry API
+    # -------------------------
+    VOICE_EXTRACTION_PROMPT = """
+You are a financial data extraction AI for Indian shop owners.
+
+Given a voice transcript in Hinglish, Hindi, Marathi, or English, extract structured transaction information.
+
+Transcript: "{transcript}"
+
+Extract and return ONLY valid JSON in this format:
+{{
+  "entry_type": "income" or "expense",
+  "amount": <numeric amount>,
+  "items": [
+    {{
+      "name": "item name",
+      "quantity": <number>,
+      "unit": "kg/pcs/packet/etc",
+      "price": <price per unit or total>
+    }}
+  ],
+  "note": "brief description",
+  "customer_name": "name if mentioned" or null,
+  "vendor_name": "name if mentioned" or null
+}}
+
+Rules:
+- "becha" (sold), "liya" (bought), "khareed" (purchased) = income/expense indicators
+- Extract amounts in rupees (₹, rupaye, rupees)
+- Extract quantities (kilo, kg, pcs, pieces)
+- If entry_type unclear, default to "income" for sales
+- Return ONLY the JSON, no markdown or explanations.
+"""
+
+    def extract_voice_data_simple(transcript: str) -> dict:
+        """Fallback simple extraction using regex when Gemini is unavailable."""
+        import re
+        
+        transcript_lower = transcript.lower()
+        
+        # Determine entry type
+        entry_type = "income"  # default
+        if any(word in transcript_lower for word in ["khareed", "liya", "purchase", "bought", "expense"]):
+            entry_type = "expense"
+        elif any(word in transcript_lower for word in ["becha", "sold", "sale", "income"]):
+            entry_type = "income"
+        
+        # Extract amount (look for numbers with rupee indicators)
+        amount = None
+        amount_patterns = [
+            r"(?:₹|rupee|rupaye|rs\.?)\s*([\d,]+\.?\d*)",
+            r"([\d,]+\.?\d*)\s*(?:rupee|rupaye|rs\.?)",
+            r"([\d,]+\.?\d*)",
+        ]
+        for pattern in amount_patterns:
+            match = re.search(pattern, transcript_lower)
+            if match:
+                try:
+                    amount_str = match.group(1).replace(",", "")
+                    amount = float(amount_str)
+                    break
+                except (ValueError, IndexError):
+                    continue
+        
+        # Extract quantity and item name
+        items = []
+        quantity = None
+        unit = None
+        item_name = None
+        
+        # Pattern: "5 kilo chawal" or "10 kg rice"
+        item_pattern = r"([\d,]+\.?\d*)\s*(kilo|kg|pcs|pieces|packet|box)\s+(\w+)"
+        item_match = re.search(item_pattern, transcript_lower)
+        if item_match:
+            try:
+                quantity = float(item_match.group(1).replace(",", ""))
+                unit = item_match.group(2)
+                item_name = item_match.group(3)
+            except (ValueError, IndexError):
+                pass
+        
+        if item_name and quantity:
+            items.append({
+                "name": item_name,
+                "quantity": quantity,
+                "unit": unit or "pcs",
+                "price": amount / quantity if amount and quantity else None
+            })
+        
+        note = transcript.strip()
+        
+        return {
+            "entry_type": entry_type,
+            "amount": amount or 0,
+            "items": items,
+            "note": note,
+            "customer_name": None,
+            "vendor_name": None
+        }
+
+    @app.post("/api/voice/process")
+    def api_process_voice():
+        """Process voice transcript and create ledger entry."""
+        user_id = require_login()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        data = request.get_json(silent=True) or {}
+        transcript = (data.get("transcript") or "").strip()
+
+        if not transcript:
+            return jsonify({"error": "transcript_required"}), 400
+
+        try:
+            extracted = None
+            
+            # Try Gemini extraction first (if API key available)
+            if GEMINI_API_KEY:
+                try:
+                    prompt = VOICE_EXTRACTION_PROMPT.format(transcript=transcript)
+                    model = genai.GenerativeModel("gemini-2.0-flash-exp")
+                    response = model.generate_content(prompt)
+                    raw = response.text or ""
+                    cleaned = _clean_json_text(raw)
+                    extracted = json.loads(cleaned)
+                except Exception as e:
+                    print(f"Gemini extraction failed: {e}, falling back to simple extraction")
+                    extracted = None
+
+            # Fallback to simple regex extraction
+            if not extracted:
+                extracted = extract_voice_data_simple(transcript)
+
+            # Validate extracted data
+            entry_type = extracted.get("entry_type", "income")
+            if entry_type not in {"income", "expense"}:
+                entry_type = "income"
+
+            amount = extracted.get("amount", 0)
+            if not amount or amount <= 0:
+                # Try to extract amount from transcript directly
+                import re
+                amount_match = re.search(r"([\d,]+\.?\d*)", transcript)
+                if amount_match:
+                    try:
+                        amount = float(amount_match.group(1).replace(",", ""))
+                    except ValueError:
+                        pass
+
+            if amount <= 0:
+                return jsonify({"error": "amount_not_found", "message": "Could not extract amount from transcript."}), 400
+
+            note = extracted.get("note") or transcript
+            items = extracted.get("items", [])
+            
+            # Format note with item details if available
+            if items:
+                item_strs = []
+                for item in items:
+                    qty = item.get("quantity", 1)
+                    unit = item.get("unit", "")
+                    name = item.get("name", "")
+                    price = item.get("price")
+                    if price:
+                        item_strs.append(f"{qty} {unit} {name} @ ₹{price:.2f}")
+                    else:
+                        item_strs.append(f"{qty} {unit} {name}")
+                if item_strs:
+                    note = f"{transcript} | Items: {', '.join(item_strs)}"
+
+            # Create ledger entry
+            with get_conn() as conn:
+                entry_id = exec_one(
+                    conn,
+                    "INSERT INTO entries (user_id, entry_type, amount, note) VALUES (?,?,?,?)",
+                    (user_id, entry_type, float(amount), note),
+                )
+
+                # Fetch the created entry
+                row = query_one(
+                    conn,
+                    "SELECT id, entry_type, amount, note, created_at FROM entries WHERE id = ?",
+                    (entry_id,),
+                )
+
+            return jsonify({
+                "ok": True,
+                "entry": dict(row),
+                "items": items,
+            })
+
+        except json.JSONDecodeError as e:
+            return jsonify({"error": "extraction_failed", "message": f"Failed to parse extracted data: {str(e)}"}), 500
+        except Exception as e:
+            print(f"Voice processing error: {e}")
+            return jsonify({"error": "processing_failed", "message": str(e)}), 500
+
     return app
 
 
